@@ -216,6 +216,18 @@ export function Paneel({ adapter, basis = "" }: PaneelProps) {
                 <DataListValue>{stand!.object!.versies.at(-1)?.nummer ?? "geen"}</DataListValue>
               </DataListItem>
               <DataListItem>
+                <DataListKey>Inhoud</DataListKey>
+                <DataListValue>
+                  {stand!.object!.onleesbaarGemaakt ? (
+                    <StatusBadge status="danger">onleesbaar gemaakt</StatusBadge>
+                  ) : stand!.object!.versleuteld ? (
+                    <StatusBadge status="safe">versleuteld met eigen sleutel</StatusBadge>
+                  ) : (
+                    "niet versleuteld"
+                  )}
+                </DataListValue>
+              </DataListItem>
+              <DataListItem>
                 <DataListKey>Metadata</DataListKey>
                 <DataListValue>
                   <StatusBadge status={stand!.object!.volledigheid.volledig ? "safe" : "warning"}>
@@ -224,7 +236,12 @@ export function Paneel({ adapter, basis = "" }: PaneelProps) {
                 </DataListValue>
               </DataListItem>
             </DataList>
-            <SecondaryActionButton onClick={doeVersie} disabled={uit || bezig !== null} busy={bezig === "versie"}>
+            {stand!.object!.onleesbaarGemaakt && (
+              <Paragraph small>
+                De sleutel van dit stuk is vernietigd. De registratie blijft bestaan; nieuwe versies kunnen niet meer worden vastgelegd.
+              </Paragraph>
+            )}
+            <SecondaryActionButton onClick={doeVersie} disabled={uit || bezig !== null || !!stand!.object!.onleesbaarGemaakt} busy={bezig === "versie"}>
               Versie vastleggen
             </SecondaryActionButton>
           </>
