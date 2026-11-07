@@ -1,0 +1,86 @@
+.oa-paneel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--utrecht-document-background-color, #fff);
+  color: var(--utrecht-document-color, #1d1d1b);
+  font-family: var(--utrecht-document-font-family, system-ui, sans-serif);
+  font-size: var(--utrecht-document-font-size, 16px);
+}
+.oa-paneel * { box-sizing: border-box; }
+
+/*
+ * Compacte maten voor een zijpaneel. De thema's van gemeenten zijn gemaakt
+ * voor een volle webpagina; kleuren en lettertype blijven van het thema,
+ * alleen de maten worden hier kleiner gezet.
+ */
+.oa-paneel.oa-paneel {
+  --oa-tekst: 0.875rem;
+  --utrecht-paragraph-font-size: var(--oa-tekst);
+  --utrecht-paragraph-line-height: 1.45;
+  --utrecht-paragraph-small-font-size: 0.8125rem;
+  --utrecht-heading-2-font-size: 1.25rem;
+  --utrecht-heading-2-line-height: 1.3;
+  --utrecht-heading-3-font-size: 1.0625rem;
+  --utrecht-heading-3-line-height: 1.3;
+  --utrecht-form-label-font-size: var(--oa-tekst);
+  --utrecht-form-label-line-height: 1.4;
+  --utrecht-form-field-description-font-size: 0.8125rem;
+  --utrecht-button-font-size: var(--oa-tekst);
+  --utrecht-button-line-height: 1.3;
+  --utrecht-button-min-block-size: 36px;
+  --utrecht-button-padding-block-start: 6px;
+  --utrecht-button-padding-block-end: 6px;
+  --utrecht-button-padding-inline-start: 14px;
+  --utrecht-button-padding-inline-end: 14px;
+  --utrecht-textbox-font-size: var(--oa-tekst);
+  --utrecht-textbox-padding-block-start: 6px;
+  --utrecht-textbox-padding-block-end: 6px;
+  --utrecht-textbox-padding-inline-start: 8px;
+  --utrecht-textbox-padding-inline-end: 8px;
+  --utrecht-textarea-font-size: var(--oa-tekst);
+  --utrecht-select-font-size: var(--oa-tekst);
+  --utrecht-select-padding-block-start: 6px;
+  --utrecht-select-padding-block-end: 6px;
+  --utrecht-select-padding-inline-start: 8px;
+  --utrecht-alert-padding-block-start: 10px;
+  --utrecht-alert-padding-block-end: 10px;
+  --utrecht-alert-padding-inline-start: 12px;
+  --utrecht-alert-padding-inline-end: 12px;
+  --utrecht-data-list-item-margin-block-start: 0;
+  font-size: var(--oa-tekst);
+}
+.oa-paneel .utrecht-paragraph { margin-block: 0; }
+.oa-paneel .utrecht-form-field { display: flex; flex-direction: column; gap: 2px; }
+.oa-paneel .utrecht-form-field > *, .oa-paneel .utrecht-form-field__label, .oa-paneel .utrecht-form-field__description { margin-block: 0; }
+.oa-paneel .utrecht-form-field__description { font-size: 0.8125rem; }
+.oa-voorstel { display: block; margin-top: 2px; }
+.oa-paneel .utrecht-form-field + .utrecht-form-field { margin-top: 8px; }
+.oa-paneel .utrecht-data-list { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
+.oa-paneel .utrecht-data-list__item { display: contents; }
+.oa-paneel .utrecht-data-list__item-key, .oa-paneel .utrecht-data-list__item-value { margin: 0; font-size: var(--oa-tekst); }
+.oa-paneel .utrecht-data-list__item-key { font-weight: 600; }
+.oa-paneel .utrecht-alert .utrecht-paragraph { font-size: var(--oa-tekst); }
+.oa-paneel .utrecht-status-badge { font-size: 0.75rem; }
+.oa-paneel .utrecht-button--subtle { padding: 2px 6px; min-block-size: 0; }
+.oa-kop { border-bottom: 1px solid var(--utrecht-separator-color, #ccc); padding-bottom: 8px; }
+.oa-kop .utrecht-heading-2 { margin: 0 0 4px; }
+.oa-sectie { display: flex; flex-direction: column; gap: 8px; }
+.oa-sectie .utrecht-heading-3 { margin: 0; }
+.oa-sectie .utrecht-form-field { margin-block: 0; }
+.oa-sectie .utrecht-textbox, .oa-sectie .utrecht-select, .oa-sectie .utrecht-textarea { width: 100%; max-width: none; }
+.oa-bevindingen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.oa-bevinding { border-inline-start: 4px solid #999; padding: 8px 8px 8px 12px; background: rgba(0, 0, 0, 0.03); }
+.oa-bevinding.oa-fout { border-color: #c4001a; }
+.oa-bevinding.oa-waarschuwing { border-color: #c47a00; }
+.oa-bevinding .utrecht-paragraph { margin: 0 0 4px; }
+.oa-acties { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px; }
+.oa-acties .utrecht-textbox { flex: 1 1 160px; }
+.oa-motorkap { margin-top: auto; border-top: 1px solid var(--utrecht-separator-color, #ccc); padding-top: 8px; font-size: 0.875em; }
+.oa-motorkap summary { cursor: pointer; font-weight: 600; }
+.oa-motorkap ul, .oa-motorkap ol { padding-inline-start: 20px; margin: 4px 0 8px; }
+.oa-motorkap code { font-size: 0.85em; word-break: break-all; }
