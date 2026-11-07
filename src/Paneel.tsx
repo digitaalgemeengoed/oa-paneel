@@ -18,8 +18,8 @@ import {
   Textarea,
   Textbox,
 } from "@utrecht/component-library-react";
-import { heeftVermogen, type Adapter, type Bevinding, type Gebeurtenis, type Objecttype, type WieBenIk } from "@oa/contract";
-import { metadateren, toegankelijkheid, bepaalStand, legMetadataVast, legVersieVast, registreer, Verbinding, VerbindingsFout, type Stand, type Veld } from "@oa/kern";
+import { heeftVermogen, type Adapter, type Bevinding, type Gebeurtenis, type Objecttype, type WieBenIk } from "@digitaalgemeengoed/oa-contract";
+import { metadateren, toegankelijkheid, bepaalStand, legMetadataVast, legVersieVast, registreer, Verbinding, VerbindingsFout, type Stand, type Veld } from "@digitaalgemeengoed/oa-kern";
 import { Motorkap, type Aanroep } from "./Motorkap";
 
 const THEMA: Record<string, string> = { haarlem: "haarlem-theme" };

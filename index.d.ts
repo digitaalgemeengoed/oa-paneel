@@ -1,4 +1,4 @@
-import type { Adapter } from "@oa/contract";
+import type { Adapter } from "@digitaalgemeengoed/oa-contract";
 import type { JSX } from "react";
 
 /** Publieke API van het paneel. */

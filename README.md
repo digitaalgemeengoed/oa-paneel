@@ -7,8 +7,8 @@ Het **paneel** van de Office Assistent, in React met NL Design System. Hetzelfde
 ## Gebruik
 
 ```js
-import { plaatsPaneel } from "@oa/paneel";
-import "@oa/paneel/style.css";
+import { plaatsPaneel } from "@digitaalgemeengoed/oa-paneel";
+import "@digitaalgemeengoed/oa-paneel/style.css";
 
 const weghalen = plaatsPaneel(document.getElementById("paneel"), mijnAdapter);
 ```

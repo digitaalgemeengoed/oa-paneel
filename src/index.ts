@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { createElement } from "react";
-import type { Adapter } from "@oa/contract";
+import type { Adapter } from "@digitaalgemeengoed/oa-contract";
 import { Paneel, type PaneelProps } from "./Paneel";
 
 import "@utrecht/component-library-css/dist/index.css";

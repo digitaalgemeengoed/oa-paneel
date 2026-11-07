@@ -1,5 +1,5 @@
 import { Paragraph } from "@utrecht/component-library-react";
-import { OPTIONELE_VERMOGENS, type Gebeurtenis, type Werkomgeving } from "@oa/contract";
+import { OPTIONELE_VERMOGENS, type Gebeurtenis, type Werkomgeving } from "@digitaalgemeengoed/oa-contract";
 
 export interface Aanroep {
   methode: string;
