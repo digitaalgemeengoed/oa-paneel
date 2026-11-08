@@ -29,6 +29,12 @@ export interface PaneelProps {
   adapter: Adapter;
   /** Basisadres van de integratielaag; leeg = hetzelfde adres als de pagina. */
   basis?: string;
+  /**
+   * Sessiesleutel voor werkomgevingen waar het cookie niet werkt, zoals een
+   * Office-invoegtoepassing in een iframe van office.com. Gaat mee als
+   * Authorization-kop; alleen in het geheugen, nooit in opslag.
+   */
+  sessie?: string;
 }
 
 type Melding = { soort: "info" | "warning" | "error" | "ok"; tekst: string } | null;
@@ -37,17 +43,17 @@ type Melding = { soort: "info" | "warning" | "error" | "ok"; tekst: string } | n
  * Het paneel van de assistent. Hetzelfde in elke werkomgeving; wat een
  * omgeving niet kan, doet de assistent op een andere manier en zegt dat.
  */
-export function Paneel({ adapter, basis = "" }: PaneelProps) {
+export function Paneel({ adapter, basis = "", sessie }: PaneelProps) {
   const [aanroepen, setAanroepen] = useState<Aanroep[]>([]);
   const verbinding = useMemo(
     () =>
       new Verbinding(basis, async (invoer, init) => {
-        const r = await fetch(invoer, init);
+        const r = await fetch(invoer, sessie ? { ...init, headers: { ...(init?.headers ?? {}), authorization: `Bearer ${sessie}` } } : init);
         const pad = String(invoer).replace(basis, "");
         setAanroepen((a) => [{ methode: init?.method ?? "GET", pad, status: r.status, tijd: new Date() }, ...a].slice(0, 12));
         return r;
       }),
-    [basis],
+    [basis, sessie],
   );
 
   const omgeving = adapter.werkomgeving();

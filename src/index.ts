@@ -15,8 +15,8 @@ export { Paneel, type PaneelProps };
  * (een Office-invoegtoepassing, een Nextcloud-zijbalk, een webmail) het
  * paneel inbedden met zijn eigen adapter.
  */
-export function plaatsPaneel(element: HTMLElement, adapter: Adapter, opties: { basis?: string } = {}): () => void {
+export function plaatsPaneel(element: HTMLElement, adapter: Adapter, opties: { basis?: string; sessie?: string } = {}): () => void {
   const wortel = createRoot(element);
-  wortel.render(createElement(Paneel, { adapter, basis: opties.basis }));
+  wortel.render(createElement(Paneel, { adapter, basis: opties.basis, sessie: opties.sessie }));
   return () => wortel.unmount();
 }
