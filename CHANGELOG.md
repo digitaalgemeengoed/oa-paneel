@@ -1,5 +1,14 @@
 # Wijzigingen
 
+## 0.5.0 — 2026-11-09
+
+Het paneel heeft **modules**, zoals de demo (MIRA): Overzicht, Onderdelen, Metadateren, Toegankelijkheid, Anonimiseren, Classificeren, Waarmerken, Workflow en Help, met knoppen aan de zijkant (`knoppen: "rechts"`, standaard) of bovenaan (`"boven"`, voor de zijbalk van LibreOffice). Wat het prototype nog niet heeft, staat erin met "volgt". Tellers op de knoppen; pijltoetsen in de rij.
+
+- Opdrachten van buiten: `stuurOpdracht("meta" | … | "beoordelen")` of de DOM-gebeurtenis `oa-assistent` op `window`; optie `module` om met een module te openen. `MODULES` en `icoonSvg` voor werkbalken buiten het paneel.
+- **Zakelijk of persoonlijk** in Metadateren: verplicht voordat je vastlegt, met "Voorstel: zakelijk". Persoonlijk: geen metadatavelden, "Persoonlijk vastleggen". Een persoonlijk stuk kan later zakelijk worden.
+- Overzicht: soort, aandachtspunten met een link naar de module, en een melding als het stuk afwijkt van de laatste versie, met "Als nieuw stuk vastleggen" voor een kopie.
+- Het paneel vult de plek die de werkomgeving geeft en scrolt zelf.
+
 ## 0.4.1 — 2026-11-08
 
 Na een herstelling worden de antwoorden in de vraagvelden leeggemaakt: de bevindingen zijn dan opnieuw genummerd en een oud antwoord kwam bij een andere bevinding terecht.

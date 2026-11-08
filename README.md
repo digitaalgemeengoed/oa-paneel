@@ -15,12 +15,33 @@ const weghalen = plaatsPaneel(document.getElementById("paneel"), mijnAdapter);
 
 Het paneel praat via de kern alleen met de integratielaag, standaard op hetzelfde adres als de pagina.
 
-## Wat het paneel laat zien (fase 1)
+## Opties en opdrachten
 
-- **Dit stuk**: geregistreerd of niet, identificatie, versie, volledigheid van de metadata; versie vastleggen.
-- **Metadata**: invoervelden uit het objecttype, voorstellen uit de inhoud, registreren of vastleggen.
-- **Toegankelijkheid**: beoordelen, per bevinding de plek tonen en herstellen.
-- **Onder de motorkap**: de vermogens van de werkomgeving, de laatste aanroepen en de gebeurtenissen van het stuk.
+```js
+plaatsPaneel(element, adapter, {
+  knoppen: "boven", // knoppen van de modules bovenaan; standaard "rechts", zoals de demo
+  module: "meta",   // met welke module het paneel opent; "beoordelen" opent Toegankelijkheid en beoordeelt
+});
+
+// Een knop in de werkbalk van de werkomgeving:
+import { stuurOpdracht } from "@digitaalgemeengoed/oa-paneel";
+stuurOpdracht("toeg"); // of window.dispatchEvent(new CustomEvent("oa-assistent", { detail: "toeg" }))
+```
+
+`MODULES` en `icoonSvg(id)` geven de namen en pictogrammen, voor werkbalken buiten het paneel.
+
+## Modules
+
+Dezelfde modules en volgorde als de demo (MIRA). Wat het prototype nog niet heeft, staat erin met "volgt in het prototype".
+
+| Module | Wat het doet |
+|---|---|
+| Overzicht | Soort (zakelijk of persoonlijk), identificatie, versie, volledigheid; versie vastleggen; aandachtspunten. Wijkt het stuk af van de laatste versie (gewijzigd, of een kopie via Opslaan als), dan zegt het paneel dat en biedt "Als nieuw stuk vastleggen". |
+| Onderdelen | volgt |
+| Metadateren | Zakelijk of persoonlijk (verplicht); voor zakelijk de velden uit het objecttype met voorstellen; registreren of vastleggen. Persoonlijk: geen metadata, eigen opslag, alleen voor jou; later zakelijk maken kan altijd. |
+| Toegankelijkheid | Beoordelen, per bevinding de plek tonen en herstellen. |
+| Anonimiseren, Classificeren, Waarmerken, Workflow | volgt |
+| Help | Wat waar staat, en onder de motorkap: de vermogens van de werkomgeving, de laatste aanroepen en de gebeurtenissen van het stuk. |
 
 Valt het platform weg, dan stopt het paneel met aanbieden wat het niet kan waarmaken en zegt dat; het werk in de werkomgeving gaat door.
 

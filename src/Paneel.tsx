@@ -18,9 +18,23 @@ import {
   Textarea,
   Textbox,
 } from "@utrecht/component-library-react";
-import { heeftVermogen, type Adapter, type Bevinding, type Gebeurtenis, type Objecttype, type Versie, type WieBenIk } from "@digitaalgemeengoed/oa-contract";
-import { metadateren, toegankelijkheid, bepaalStand, legMetadataVast, legVersieVast, registreer, Verbinding, VerbindingsFout, type Stand, type Veld } from "@digitaalgemeengoed/oa-kern";
+import { heeftVermogen, type Aard, type Adapter, type Bevinding, type Gebeurtenis, type Objecttype, type Versie, type WieBenIk } from "@digitaalgemeengoed/oa-contract";
+import {
+  metadateren,
+  toegankelijkheid,
+  bepaalStand,
+  legMetadataVast,
+  legVersieVast,
+  maakZakelijk,
+  registreer,
+  vergelijkMetLaatsteVersie,
+  Verbinding,
+  VerbindingsFout,
+  type Stand,
+  type Veld,
+} from "@digitaalgemeengoed/oa-kern";
 import { Motorkap, type Aanroep } from "./Motorkap";
+import { GEBEURTENIS, Icoon, isModule, MODULES, type ModuleId, type Opdracht } from "./modules";
 
 const THEMA: Record<string, string> = { haarlem: "haarlem-theme" };
 
@@ -42,6 +56,14 @@ export interface PaneelProps {
    * Authorization-kop; alleen in het geheugen, nooit in opslag.
    */
   sessie?: string;
+  /**
+   * Waar de knoppen van de modules staan. Rechts zoals in de demo; bovenaan
+   * waar de werkomgeving zelf rechts al knoppen heeft (de zijbalk van
+   * LibreOffice).
+   */
+  knoppen?: "rechts" | "boven";
+  /** Met welke module het paneel opent; "beoordelen" opent Toegankelijkheid en beoordeelt meteen. */
+  module?: Opdracht;
 }
 
 type Melding = { soort: "info" | "warning" | "error" | "ok"; tekst: string } | null;
@@ -50,7 +72,8 @@ type Melding = { soort: "info" | "warning" | "error" | "ok"; tekst: string } | n
  * Het paneel van de assistent. Hetzelfde in elke werkomgeving; wat een
  * omgeving niet kan, doet de assistent op een andere manier en zegt dat.
  */
-export function Paneel({ adapter, basis = "", sessie }: PaneelProps) {
+export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module = "ovz" }: PaneelProps) {
+  const [actief, setActief] = useState<ModuleId>(module === "beoordelen" ? "toeg" : module);
   const [aanroepen, setAanroepen] = useState<Aanroep[]>([]);
   const verbinding = useMemo(
     () =>
@@ -76,6 +99,10 @@ export function Paneel({ adapter, basis = "", sessie }: PaneelProps) {
   const [melding, setMelding] = useState<Melding>(null);
   const [onbereikbaar, setOnbereikbaar] = useState(false);
   const [geschiedenis, setGeschiedenis] = useState<Gebeurtenis[]>([]);
+  /** Zakelijk of persoonlijk, voor een stuk dat nog niet is vastgelegd. De medewerker kiest. */
+  const [aardKeuze, setAardKeuze] = useState<Aard | null>(null);
+  /** Wijkt het stuk af van de laatste vastgelegde versie (gewijzigd, of een kopie)? */
+  const [afwijking, setAfwijking] = useState<"gelijk" | "afwijkend" | "onbekend">("onbekend");
 
   const fout = useCallback((e: unknown) => {
     if (e instanceof VerbindingsFout) {
@@ -119,6 +146,7 @@ export function Paneel({ adapter, basis = "", sessie }: PaneelProps) {
         setMetadata(huidig);
         setVoorstellen(metadateren.suggesties(inhoud, huidig));
         if (s.terugval) setMelding({ soort: "info", tekst: s.terugval });
+        if (s.object) setAfwijking(await vergelijkMetLaatsteVersie(s, inhoud));
         await laadGeschiedenis(s);
       } catch (e) {
         if (!weg) fout(e);
@@ -130,7 +158,9 @@ export function Paneel({ adapter, basis = "", sessie }: PaneelProps) {
   }, [adapter, verbinding, fout, laadGeschiedenis]);
 
   const velden: Veld[] = useMemo(() => (type ? metadateren.velden(type) : []), [type]);
-  const ontbreekt = type ? metadateren.bevindingen(type, metadata) : [];
+  const aard: Aard | null = stand?.object ? (stand.object.aard ?? "zakelijk") : aardKeuze;
+  const persoonlijk = aard === "persoonlijk";
+  const ontbreekt = type && !persoonlijk ? metadateren.bevindingen(type, metadata) : [];
 
   async function voerUit(naam: string, werk: () => Promise<void>) {
     setBezig(naam);
@@ -147,13 +177,38 @@ export function Paneel({ adapter, basis = "", sessie }: PaneelProps) {
   const doeRegistreren = () =>
     voerUit("registreren", async () => {
       setFouten({});
-      const s = await registreer(adapter, verbinding, OBJECTTYPE, metadata);
+      const s = await registreer(adapter, verbinding, OBJECTTYPE, metadata, aardKeuze ?? "zakelijk");
       setStand(s);
+      setAfwijking("gelijk");
       setMetadata(s.object!.metadata as Record<string, string>);
-      setMelding(s.terugval ? { soort: "info", tekst: s.terugval } : { soort: "ok", tekst: "Het stuk is geregistreerd. Het platform heeft het een eigen identificatie gegeven." });
-      adapter.toon({ soort: "succes", tekst: "Geregistreerd" });
+      const tekst =
+        aardKeuze === "persoonlijk"
+          ? "Het stuk is persoonlijk vastgelegd: in je persoonlijke opslag, alleen voor jou zichtbaar, buiten het archief."
+          : "Het stuk is geregistreerd. Het platform heeft het een eigen identificatie gegeven.";
+      setMelding(s.terugval ? { soort: "info", tekst: s.terugval } : { soort: "ok", tekst });
+      adapter.toon({ soort: "succes", tekst: aardKeuze === "persoonlijk" ? "Persoonlijk vastgelegd" : "Geregistreerd" });
       await laadGeschiedenis(s);
     });
+
+  const doeZakelijk = () =>
+    voerUit("zakelijk", async () => {
+      const s = await maakZakelijk(verbinding, stand!);
+      setStand(s);
+      setMetadata({});
+      setMelding({ soort: "ok", tekst: "Het stuk is nu zakelijk en staat in het archief. Vul de metadata in en leg die vast." });
+      await laadGeschiedenis(s);
+    });
+
+  /** Een kopie (Opslaan als) met de afdruk van het origineel: als nieuw stuk vastleggen. */
+  const alsNieuwStuk = () => {
+    setStand((s) => (s ? { ...s, object: null, afdruk: null } : s));
+    setMetadata({});
+    setAardKeuze(null);
+    setAfwijking("onbekend");
+    setGeschiedenis([]);
+    setMelding({ soort: "info", tekst: "Kies zakelijk of persoonlijk en leg het vast als nieuw stuk. De verwijzing in het bestand gaat dan naar het nieuwe stuk." });
+    setActief("meta");
+  };
 
   const doeMetadata = () =>
     voerUit("metadata", async () => {
@@ -169,6 +224,7 @@ export function Paneel({ adapter, basis = "", sessie }: PaneelProps) {
       const voor = stand!.object!.versies.length;
       const s = await legVersieVast(adapter, verbinding, stand!);
       setStand(s);
+      setAfwijking("gelijk");
       setMelding(
         s.object!.versies.length > voor
           ? { soort: "ok", tekst: `Versie ${s.object!.versies.at(-1)!.nummer} is vastgelegd.` }
@@ -198,162 +254,336 @@ export function Paneel({ adapter, basis = "", sessie }: PaneelProps) {
   const geregistreerd = !!stand?.object;
   const uit = onbereikbaar || !wie;
 
+  // Knoppen in de werkbalk van de werkomgeving sturen een opdracht (zie modules.tsx).
+  const [beoordeelVerzoek, setBeoordeelVerzoek] = useState(module === "beoordelen" ? 1 : 0);
+  useEffect(() => {
+    const luister = (e: Event) => {
+      const o = (e as CustomEvent<unknown>).detail;
+      if (o === "beoordelen") {
+        setActief("toeg");
+        setBeoordeelVerzoek((n) => n + 1);
+      } else if (isModule(o)) setActief(o);
+    };
+    window.addEventListener(GEBEURTENIS, luister);
+    return () => window.removeEventListener(GEBEURTENIS, luister);
+  }, []);
+  useEffect(() => {
+    if (beoordeelVerzoek && wie && !bezig) doeBeoordelen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [beoordeelVerzoek, wie]);
+
+  const openBevindingen = bevindingen?.length ?? 0;
+  const aandacht: { module: ModuleId; tekst: string }[] = [];
+  if (stand && !geregistreerd) aandacht.push({ module: "meta", tekst: aard ? "Nog niet vastgelegd" : "Kies zakelijk of persoonlijk" });
+  if (afwijking === "afwijkend") aandacht.push({ module: "ovz", tekst: `Gewijzigd sinds versie ${stand?.object?.versies.at(-1)?.nummer}, of een kopie` });
+  if (type && ontbreekt.length) aandacht.push({ module: "meta", tekst: `${ontbreekt.length} verplicht metadataveld${ontbreekt.length > 1 ? "en" : ""} open` });
+  if (bevindingen === null) aandacht.push({ module: "toeg", tekst: "Toegankelijkheid nog niet beoordeeld" });
+  else if (openBevindingen) aandacht.push({ module: "toeg", tekst: `${openBevindingen} bevinding${openBevindingen > 1 ? "en" : ""} over toegankelijkheid` });
+  const teller: Partial<Record<ModuleId, number | string>> = {
+    ovz: aandacht.length || undefined,
+    meta: ontbreekt.length || undefined,
+    toeg: bevindingen === null ? undefined : openBevindingen || undefined,
+  };
+  const info = MODULES.find((m) => m.id === actief)!;
+
+  function kiesMetPijlen(e: React.KeyboardEvent) {
+    const volgende = knoppen === "boven" ? ["ArrowRight", "ArrowLeft"] : ["ArrowDown", "ArrowUp"];
+    const i = MODULES.findIndex((m) => m.id === actief);
+    let j = -1;
+    if (e.key === volgende[0]) j = (i + 1) % MODULES.length;
+    else if (e.key === volgende[1]) j = (i - 1 + MODULES.length) % MODULES.length;
+    else if (e.key === "Home") j = 0;
+    else if (e.key === "End") j = MODULES.length - 1;
+    if (j < 0) return;
+    e.preventDefault();
+    setActief(MODULES[j].id);
+    (e.currentTarget.querySelectorAll("button")[j] as HTMLButtonElement | undefined)?.focus();
+  }
+
+  const rij = (
+    <nav className="oa-modules" aria-label="Modules">
+      <div role="tablist" aria-orientation={knoppen === "boven" ? "horizontal" : "vertical"} onKeyDown={kiesMetPijlen}>
+        {MODULES.map((m) => (
+          <button
+            key={m.id}
+            role="tab"
+            id={`oa-tab-${m.id}`}
+            aria-controls="oa-weergave"
+            aria-selected={actief === m.id}
+            tabIndex={actief === m.id ? 0 : -1}
+            title={m.volgt ? `${m.naam} (volgt)` : m.naam}
+            aria-label={m.volgt ? `${m.naam}, volgt` : m.naam}
+            className={`oa-module${m.volgt ? " oa-volgt" : ""}${m.id === "help" ? " oa-laatste" : ""}`}
+            onClick={() => setActief(m.id)}
+          >
+            <Icoon id={m.id} />
+            {teller[m.id] !== undefined && <small className="oa-teller">{teller[m.id]}</small>}
+          </button>
+        ))}
+      </div>
+    </nav>
+  );
+
   return (
-    <div className={`oa-paneel ${wie ? (THEMA[wie.gemeente] ?? "voorbeeld-theme") : "voorbeeld-theme"}`}>
-      <header className="oa-kop">
-        <Heading2>Assistent</Heading2>
-        {wie && (
-          <Paragraph small>
-            {wie.naam} · {wie.gemeente} · in {omgeving.naam}
-          </Paragraph>
+    <div className={`oa-paneel oa-knoppen-${knoppen} ${wie ? (THEMA[wie.gemeente] ?? "voorbeeld-theme") : "voorbeeld-theme"}`}>
+      {knoppen === "boven" && rij}
+      <div className="oa-hoofd" role="tabpanel" id="oa-weergave" aria-labelledby={`oa-tab-${actief}`}>
+        <header className="oa-kop">
+          <span className="oa-kop-icoon"><Icoon id={actief} grootte={20} /></span>
+          <div>
+            <Heading2>{info.naam}</Heading2>
+            <Paragraph small>{info.onder}</Paragraph>
+          </div>
+          <span className={`oa-verbonden${uit ? " oa-niet" : ""}`} title={uit ? "Niet verbonden met het platform" : "Verbonden met het platform"} aria-label={uit ? "Niet verbonden met het platform" : "Verbonden met het platform"} />
+        </header>
+
+        {melding && (
+          <Alert type={melding.soort} role={melding.soort === "error" ? "alert" : "status"}>
+            <Paragraph>{melding.tekst}</Paragraph>
+          </Alert>
         )}
-      </header>
 
-      {melding && (
-        <Alert type={melding.soort} role={melding.soort === "error" ? "alert" : "status"}>
-          <Paragraph>{melding.tekst}</Paragraph>
-        </Alert>
-      )}
-
-      <section className="oa-sectie" aria-labelledby="oa-stuk">
-        <Heading3 id="oa-stuk">Dit stuk</Heading3>
-        {geregistreerd ? (
+        {actief === "ovz" && (
           <>
-            <DataList>
-              <DataListItem>
-                <DataListKey>Identificatie</DataListKey>
-                <DataListValue>
-                  <code title={stand!.object!.identificatie}>{stand!.object!.identificatie.slice(0, 8)}…</code>
-                </DataListValue>
-              </DataListItem>
-              <DataListItem>
-                <DataListKey>Versie</DataListKey>
-                <DataListValue>{stand!.object!.versies.at(-1)?.nummer ?? "geen"}</DataListValue>
-              </DataListItem>
-              {stand!.object!.versies.at(-1) && (
-                <DataListItem>
-                  <DataListKey>Bestand</DataListKey>
-                  <DataListValue>{bestandsomschrijving(stand!.object!.versies.at(-1)!)}</DataListValue>
-                </DataListItem>
-              )}
-              <DataListItem>
-                <DataListKey>Inhoud</DataListKey>
-                <DataListValue>
-                  {stand!.object!.onleesbaarGemaakt ? (
-                    <StatusBadge status="danger">onleesbaar gemaakt</StatusBadge>
-                  ) : stand!.object!.versleuteld ? (
-                    <StatusBadge status="safe">versleuteld met eigen sleutel</StatusBadge>
-                  ) : (
-                    "niet versleuteld"
-                  )}
-                </DataListValue>
-              </DataListItem>
-              <DataListItem>
-                <DataListKey>Metadata</DataListKey>
-                <DataListValue>
-                  <StatusBadge status={stand!.object!.volledigheid.volledig ? "safe" : "warning"}>
-                    {stand!.object!.volledigheid.volledig ? "volledig" : `${stand!.object!.volledigheid.ontbreekt.length} verplicht veld(en) open`}
-                  </StatusBadge>
-                </DataListValue>
-              </DataListItem>
-            </DataList>
-            {stand!.object!.onleesbaarGemaakt && (
+            {wie && (
               <Paragraph small>
-                De sleutel van dit stuk is vernietigd. De registratie blijft bestaan; nieuwe versies kunnen niet meer worden vastgelegd.
+                {wie.naam} · {wie.gemeente} · in {omgeving.naam}
               </Paragraph>
             )}
-            <SecondaryActionButton onClick={doeVersie} disabled={uit || bezig !== null || !!stand!.object!.onleesbaarGemaakt} busy={bezig === "versie"}>
-              Versie vastleggen
-            </SecondaryActionButton>
-          </>
-        ) : (
-          <Paragraph>Dit stuk is nog niet geregistreerd. Vul de metadata in en registreer het; het platform geeft het dan een eigen identificatie.</Paragraph>
-        )}
-      </section>
-
-      <section className="oa-sectie" aria-labelledby="oa-md">
-        <Heading3 id="oa-md">Metadata</Heading3>
-        {velden.map((v) => (
-          <FormField
-            key={v.naam}
-            label={<label htmlFor={`oa-${v.naam}`}>{v.label}{v.verplicht ? " (verplicht)" : ""}</label>}
-            description={
-              <>
-                {v.beschrijving}
-                {voorstellen[v.naam] && !metadata[v.naam] && (
-                  <span className="oa-voorstel">
-                    Voorstel: <q>{voorstellen[v.naam]}</q>{" "}
-                    <SubtleButton onClick={() => setMetadata((m) => ({ ...m, [v.naam]: voorstellen[v.naam] }))}>Overnemen</SubtleButton>
-                  </span>
-                )}
-              </>
-            }
-            invalid={!!fouten[v.naam]}
-            errorMessage={fouten[v.naam]}
-            input={veldInvoer(v, metadata[v.naam] ?? "", (w) => setMetadata((m) => ({ ...m, [v.naam]: w })), !!fouten[v.naam])}
-          />
-        ))}
-        {geregistreerd ? (
-          <PrimaryActionButton onClick={doeMetadata} disabled={uit || bezig !== null} busy={bezig === "metadata"}>
-            Metadata vastleggen
-          </PrimaryActionButton>
-        ) : (
-          <PrimaryActionButton onClick={doeRegistreren} disabled={uit || bezig !== null} busy={bezig === "registreren"}>
-            Registreren
-          </PrimaryActionButton>
-        )}
-        {ontbreekt.length > 0 && <Paragraph small>Nog open: {ontbreekt.map((b) => b.melding.replace(" is nog niet ingevuld.", "")).join(", ")}. Registreren kan al; het stuk heet dan onvolledig.</Paragraph>}
-      </section>
-
-      <section className="oa-sectie" aria-labelledby="oa-tg">
-        <Heading3 id="oa-tg">Toegankelijkheid</Heading3>
-        <Paragraph small>Beoordelen leest alleen en legt niets vast.</Paragraph>
-        <SecondaryActionButton onClick={doeBeoordelen} disabled={uit || bezig !== null} busy={bezig === "beoordelen"}>
-          {bevindingen ? "Opnieuw beoordelen" : "Beoordelen"}
-        </SecondaryActionButton>
-        {bevindingen && bevindingen.length === 0 && <Paragraph>Geen bevindingen. Het stuk voldoet aan de gecontroleerde punten.</Paragraph>}
-        {bevindingen && bevindingen.length > 0 && (
-          <ul className="oa-bevindingen">
-            {bevindingen.map((b) => (
-              <li key={b.id} className={`oa-bevinding oa-${b.ernst}`}>
+            <section className="oa-sectie" aria-labelledby="oa-stuk">
+              <Heading3 id="oa-stuk">Dit stuk</Heading3>
+              {geregistreerd ? (
+                <>
+                  <DataList>
+                    <DataListItem>
+                      <DataListKey>Soort</DataListKey>
+                      <DataListValue>{persoonlijk ? <StatusBadge status="neutral">persoonlijk</StatusBadge> : "zakelijk"}</DataListValue>
+                    </DataListItem>
+                    <DataListItem>
+                      <DataListKey>Identificatie</DataListKey>
+                      <DataListValue>
+                        <code title={stand!.object!.identificatie}>{stand!.object!.identificatie.slice(0, 8)}…</code>
+                      </DataListValue>
+                    </DataListItem>
+                    <DataListItem>
+                      <DataListKey>Versie</DataListKey>
+                      <DataListValue>{stand!.object!.versies.at(-1)?.nummer ?? "geen"}</DataListValue>
+                    </DataListItem>
+                    {stand!.object!.versies.at(-1) && (
+                      <DataListItem>
+                        <DataListKey>Bestand</DataListKey>
+                        <DataListValue>{bestandsomschrijving(stand!.object!.versies.at(-1)!)}</DataListValue>
+                      </DataListItem>
+                    )}
+                    <DataListItem>
+                      <DataListKey>Inhoud</DataListKey>
+                      <DataListValue>
+                        {stand!.object!.onleesbaarGemaakt ? (
+                          <StatusBadge status="danger">onleesbaar gemaakt</StatusBadge>
+                        ) : stand!.object!.versleuteld ? (
+                          <StatusBadge status="safe">versleuteld met eigen sleutel</StatusBadge>
+                        ) : (
+                          "niet versleuteld"
+                        )}
+                      </DataListValue>
+                    </DataListItem>
+                    {!persoonlijk && (
+                      <DataListItem>
+                        <DataListKey>Metadata</DataListKey>
+                        <DataListValue>
+                          <StatusBadge status={stand!.object!.volledigheid.volledig ? "safe" : "warning"}>
+                            {stand!.object!.volledigheid.volledig ? "volledig" : `${stand!.object!.volledigheid.ontbreekt.length} verplicht veld(en) open`}
+                          </StatusBadge>
+                        </DataListValue>
+                      </DataListItem>
+                    )}
+                  </DataList>
+                  {afwijking === "afwijkend" && (
+                    <div className="oa-kader" role="note">
+                      <Paragraph small>
+                        Dit stuk wijkt af van versie {stand!.object!.versies.at(-1)?.nummer} in het platform. Heb je het daarna gewijzigd, leg dan een nieuwe versie vast. Is het een
+                        kopie (Opslaan als), leg het dan vast als nieuw stuk; anders komt de kopie als versie onder het origineel.
+                      </Paragraph>
+                      <SubtleButton onClick={alsNieuwStuk}>Als nieuw stuk vastleggen</SubtleButton>
+                    </div>
+                  )}
+                  {stand!.object!.onleesbaarGemaakt && (
+                    <Paragraph small>De sleutel van dit stuk is vernietigd. De registratie blijft bestaan; nieuwe versies kunnen niet meer worden vastgelegd.</Paragraph>
+                  )}
+                  <SecondaryActionButton onClick={doeVersie} disabled={uit || bezig !== null || !!stand!.object!.onleesbaarGemaakt} busy={bezig === "versie"}>
+                    Versie vastleggen
+                  </SecondaryActionButton>
+                </>
+              ) : (
                 <Paragraph>
-                  <StatusBadge status={b.ernst === "fout" ? "danger" : b.ernst === "waarschuwing" ? "warning" : "neutral"}>{b.ernst}</StatusBadge> {b.melding}
+                  Dit stuk is nog niet vastgelegd. Kies bij Metadateren of het zakelijk of persoonlijk is. Een zakelijk stuk registreer je met metadata; het platform geeft het een
+                  eigen identificatie.
                 </Paragraph>
-                <Paragraph small>
-                  {b.regel}
-                  {b.plek ? ` · ${b.plek.beschrijving}` : ""}
-                </Paragraph>
-                {b.voorstel?.beschrijving && <Paragraph small>{b.voorstel.beschrijving}</Paragraph>}
-                <div className="oa-acties">
-                  {b.plek && kanTonen && <SubtleButton onClick={() => adapter.toonPlek!(b.plek!)}>Toon</SubtleButton>}
-                  {b.voorstel?.vraag && (
-                    <Textbox
-                      aria-label={b.voorstel.vraag.label}
-                      placeholder={b.voorstel.vraag.label}
-                      value={antwoorden[b.id] ?? ""}
-                      onChange={(e) => setAntwoorden((a) => ({ ...a, [b.id]: e.target.value }))}
-                    />
-                  )}
-                  {(b.voorstel?.vervanging || b.voorstel?.vraag) && b.plek && (
-                    <SecondaryActionButton
-                      onClick={() => doeHerstel(b)}
-                      disabled={bezig !== null || (!!b.voorstel?.vraag && b.voorstel.vraag.veld !== "alt" && !antwoorden[b.id])}
-                      busy={bezig === `herstel-${b.id}`}
-                    >
-                      {b.voorstel?.vraag ? "Toepassen" : "Herstellen"}
-                    </SecondaryActionButton>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+              )}
+            </section>
+            <section className="oa-sectie" aria-labelledby="oa-aandacht">
+              <Heading3 id="oa-aandacht">Aandachtspunten</Heading3>
+              {aandacht.length ? (
+                <ul className="oa-aandacht">
+                  {aandacht.map((a) => (
+                    <li key={a.tekst}>
+                      <button type="button" className="oa-link" onClick={() => setActief(a.module)}>
+                        <Icoon id={a.module} grootte={14} /> {a.tekst}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <Paragraph small>Niets open.</Paragraph>
+              )}
+            </section>
+          </>
         )}
-        {!kanTonen && bevindingen && bevindingen.length > 0 && (
-          <Paragraph small>Deze werkomgeving kan niet naar een plek in het document springen. De omschrijving zegt waar het is.</Paragraph>
-        )}
-      </section>
 
-      <Motorkap aanroepen={aanroepen} geschiedenis={geschiedenis} omgeving={omgeving} />
+        {actief === "meta" && (
+          <section className="oa-sectie" aria-label="Metadata">
+            <div className="utrecht-form-field">
+              <div className="utrecht-form-label" id="oa-aard-label">
+                Zakelijk of persoonlijk (verplicht)
+              </div>
+              <div className="oa-keuze" role="group" aria-labelledby="oa-aard-label">
+                {(["zakelijk", "persoonlijk"] as Aard[]).map((a) => (
+                  <button
+                    key={a}
+                    type="button"
+                    aria-pressed={aard === a}
+                    disabled={geregistreerd && !(a === "zakelijk" && persoonlijk)}
+                    onClick={() => (geregistreerd ? doeZakelijk() : setAardKeuze(a))}
+                  >
+                    {a === "zakelijk" ? "Zakelijk" : "Persoonlijk"}
+                  </button>
+                ))}
+              </div>
+              <div className="utrecht-form-field__description">
+                {!aard && "Voorstel: zakelijk, want je werkt aan een stuk voor de gemeente. Jij kiest; jij bent daarvoor verantwoordelijk."}
+                {aard === "zakelijk" && !geregistreerd && "Zakelijk: het stuk komt in het archief van de gemeente, met metadata, en valt onder de Woo."}
+                {persoonlijk &&
+                  "Persoonlijk: het stuk komt in je persoonlijke opslag. Het valt buiten het archief en de Woo, krijgt geen metadata en is alleen voor jou zichtbaar."}
+                {geregistreerd && persoonlijk && " Zakelijk maken kan altijd: dan komt het stuk alsnog in het archief."}
+                {geregistreerd && !persoonlijk && "Zakelijk. Persoonlijk maken kan in het prototype nog niet; straks binnen de bedenktijd, of op verzoek bij de informatiebeheerder."}
+              </div>
+            </div>
+            {!persoonlijk && velden.map((v) => (
+              <FormField
+                key={v.naam}
+                label={<label htmlFor={`oa-${v.naam}`}>{v.label}{v.verplicht ? " (verplicht)" : ""}</label>}
+                description={
+                  <>
+                    {v.beschrijving}
+                    {voorstellen[v.naam] && !metadata[v.naam] && (
+                      <span className="oa-voorstel">
+                        Voorstel: <q>{voorstellen[v.naam]}</q>{" "}
+                        <SubtleButton onClick={() => setMetadata((m) => ({ ...m, [v.naam]: voorstellen[v.naam] }))}>Overnemen</SubtleButton>
+                      </span>
+                    )}
+                  </>
+                }
+                invalid={!!fouten[v.naam]}
+                errorMessage={fouten[v.naam]}
+                input={veldInvoer(v, metadata[v.naam] ?? "", (w) => setMetadata((m) => ({ ...m, [v.naam]: w })), !!fouten[v.naam])}
+              />
+            ))}
+            {geregistreerd ? (
+              !persoonlijk && (
+                <PrimaryActionButton onClick={doeMetadata} disabled={uit || bezig !== null} busy={bezig === "metadata"}>
+                  Metadata vastleggen
+                </PrimaryActionButton>
+              )
+            ) : (
+              <PrimaryActionButton onClick={doeRegistreren} disabled={uit || bezig !== null || !aard} busy={bezig === "registreren"}>
+                {persoonlijk ? "Persoonlijk vastleggen" : "Registreren"}
+              </PrimaryActionButton>
+            )}
+            {bezig === "zakelijk" && <Paragraph small>Het stuk gaat naar het archief…</Paragraph>}
+            {ontbreekt.length > 0 && <Paragraph small>Nog open: {ontbreekt.map((b) => b.melding.replace(" is nog niet ingevuld.", "")).join(", ")}. Registreren kan al; het stuk heet dan onvolledig.</Paragraph>}
+          </section>
+        )}
+
+        {actief === "toeg" && (
+          <section className="oa-sectie" aria-label="Toegankelijkheid">
+            <Paragraph small>Beoordelen leest alleen en legt niets vast.</Paragraph>
+            <SecondaryActionButton onClick={doeBeoordelen} disabled={uit || bezig !== null} busy={bezig === "beoordelen"}>
+              {bevindingen ? "Opnieuw beoordelen" : "Beoordelen"}
+            </SecondaryActionButton>
+            {bevindingen && bevindingen.length === 0 && <Paragraph>Geen bevindingen. Het stuk voldoet aan de gecontroleerde punten.</Paragraph>}
+            {bevindingen && bevindingen.length > 0 && (
+              <ul className="oa-bevindingen">
+                {bevindingen.map((b) => (
+                  <li key={b.id} className={`oa-bevinding oa-${b.ernst}`}>
+                    <Paragraph>
+                      <StatusBadge status={b.ernst === "fout" ? "danger" : b.ernst === "waarschuwing" ? "warning" : "neutral"}>{b.ernst}</StatusBadge> {b.melding}
+                    </Paragraph>
+                    <Paragraph small>
+                      {b.regel}
+                      {b.plek ? ` · ${b.plek.beschrijving}` : ""}
+                    </Paragraph>
+                    {b.voorstel?.beschrijving && <Paragraph small>{b.voorstel.beschrijving}</Paragraph>}
+                    <div className="oa-acties">
+                      {b.plek && kanTonen && <SubtleButton onClick={() => adapter.toonPlek!(b.plek!)}>Toon</SubtleButton>}
+                      {b.voorstel?.vraag && (
+                        <Textbox
+                          aria-label={b.voorstel.vraag.label}
+                          placeholder={b.voorstel.vraag.label}
+                          value={antwoorden[b.id] ?? ""}
+                          onChange={(e) => setAntwoorden((a) => ({ ...a, [b.id]: e.target.value }))}
+                        />
+                      )}
+                      {(b.voorstel?.vervanging || b.voorstel?.vraag) && b.plek && (
+                        <SecondaryActionButton
+                          onClick={() => doeHerstel(b)}
+                          disabled={bezig !== null || (!!b.voorstel?.vraag && b.voorstel.vraag.veld !== "alt" && !antwoorden[b.id])}
+                          busy={bezig === `herstel-${b.id}`}
+                        >
+                          {b.voorstel?.vraag ? "Toepassen" : "Herstellen"}
+                        </SecondaryActionButton>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {!kanTonen && bevindingen && bevindingen.length > 0 && (
+              <Paragraph small>Deze werkomgeving kan niet naar een plek in het document springen. De omschrijving zegt waar het is.</Paragraph>
+            )}
+          </section>
+        )}
+
+        {info.volgt && (
+          <section className="oa-sectie oa-volgt-weergave" aria-label={info.naam}>
+            <StatusBadge status="neutral">volgt in het prototype</StatusBadge>
+            <Paragraph>{info.volgt}</Paragraph>
+            <Paragraph small>In de demo (MIRA) is te zien hoe het werkt.</Paragraph>
+          </section>
+        )}
+
+        {actief === "help" && (
+          <>
+            <section className="oa-sectie" aria-label="Modules">
+              <dl className="oa-hulp">
+                {MODULES.filter((m) => m.id !== "help").map((m) => (
+                  <div key={m.id}>
+                    <dt>
+                      <button type="button" className="oa-link" onClick={() => setActief(m.id)}>
+                        <Icoon id={m.id} grootte={14} /> {m.naam}
+                      </button>
+                      {m.volgt && <span className="oa-klein"> · volgt</span>}
+                    </dt>
+                    <dd>{m.onder}</dd>
+                  </div>
+                ))}
+              </dl>
+              <Paragraph small>De assistent stelt voor; jij beslist. Beoordelen en voorstellen leggen niets vast. Wat je vastlegt, gaat naar het informatieplatform van de gemeente, met jouw naam erbij.</Paragraph>
+            </section>
+            <Motorkap aanroepen={aanroepen} geschiedenis={geschiedenis} omgeving={omgeving} />
+          </>
+        )}
+      </div>
+      {knoppen === "rechts" && rij}
     </div>
   );
 }
