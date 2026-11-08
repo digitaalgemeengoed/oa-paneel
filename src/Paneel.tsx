@@ -18,11 +18,18 @@ import {
   Textarea,
   Textbox,
 } from "@utrecht/component-library-react";
-import { heeftVermogen, type Adapter, type Bevinding, type Gebeurtenis, type Objecttype, type WieBenIk } from "@digitaalgemeengoed/oa-contract";
+import { heeftVermogen, type Adapter, type Bevinding, type Gebeurtenis, type Objecttype, type Versie, type WieBenIk } from "@digitaalgemeengoed/oa-contract";
 import { metadateren, toegankelijkheid, bepaalStand, legMetadataVast, legVersieVast, registreer, Verbinding, VerbindingsFout, type Stand, type Veld } from "@digitaalgemeengoed/oa-kern";
 import { Motorkap, type Aanroep } from "./Motorkap";
 
 const THEMA: Record<string, string> = { haarlem: "haarlem-theme" };
+
+/** "docx, 24 kB, met html-weergave": wat er van deze versie is bewaard. */
+function bestandsomschrijving(v: Versie): string {
+  const kb = Math.max(1, Math.round(v.grootte / 1024));
+  const weergaven = (v.weergaven ?? []).map((w) => w.formaat);
+  return `${v.formaat}, ${kb} kB${weergaven.length ? `, met ${weergaven.join(" en ")}-weergave` : ""}`;
+}
 const OBJECTTYPE = "document";
 
 export interface PaneelProps {
@@ -221,6 +228,12 @@ export function Paneel({ adapter, basis = "", sessie }: PaneelProps) {
                 <DataListKey>Versie</DataListKey>
                 <DataListValue>{stand!.object!.versies.at(-1)?.nummer ?? "geen"}</DataListValue>
               </DataListItem>
+              {stand!.object!.versies.at(-1) && (
+                <DataListItem>
+                  <DataListKey>Bestand</DataListKey>
+                  <DataListValue>{bestandsomschrijving(stand!.object!.versies.at(-1)!)}</DataListValue>
+                </DataListItem>
+              )}
               <DataListItem>
                 <DataListKey>Inhoud</DataListKey>
                 <DataListValue>

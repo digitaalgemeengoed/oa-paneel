@@ -1,5 +1,9 @@
 # Wijzigingen
 
+## 0.4.0 — 2026-11-08
+
+"Dit stuk" toont wat er van de versie is bewaard: formaat, grootte en weergaven.
+
 ## 0.3.0 — 2026-11-08
 
 Optie `sessie`: de sessie als Authorization-kop, voor werkomgevingen waar het cookie niet aankomt (de Word-invoegtoepassing in Word voor het web).
