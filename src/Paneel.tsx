@@ -190,6 +190,8 @@ export function Paneel({ adapter, basis = "", sessie }: PaneelProps) {
       if (u.terugval) setMelding({ soort: "info", tekst: u.terugval });
       const r = await toegankelijkheid.beoordeel(adapter, verbinding);
       setBevindingen(r.bevindingen);
+      // Bevindingen zijn opnieuw genummerd: oude antwoorden horen niet meer bij hun plek.
+      setAntwoorden({});
     });
 
   const kanTonen = heeftVermogen(omgeving, "plek-tonen") && !!adapter.toonPlek;

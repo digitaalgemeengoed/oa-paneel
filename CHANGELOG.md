@@ -1,5 +1,9 @@
 # Wijzigingen
 
+## 0.4.1 — 2026-11-08
+
+Na een herstelling worden de antwoorden in de vraagvelden leeggemaakt: de bevindingen zijn dan opnieuw genummerd en een oud antwoord kwam bij een andere bevinding terecht.
+
 ## 0.4.0 — 2026-11-08
 
 "Dit stuk" toont wat er van de versie is bewaard: formaat, grootte en weergaven.
