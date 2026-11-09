@@ -262,9 +262,13 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
         <PrimaryActionButton onClick={zoek} disabled={uit || bezig !== null || !!p.nietBeginnen} busy={bezig === "anon-zoeken"}>
           {sessie ? "Opnieuw zoeken" : "Persoonsgegevens zoeken"}
         </PrimaryActionButton>
-        {adapter.leesSelectie && (
+        {adapter.leesSelectie ? (
           <SecondaryActionButton onClick={leesSelectie} disabled={uit || bezig !== null || !!p.nietBeginnen}>
             Anonimiseer selectie
+          </SecondaryActionButton>
+        ) : (
+          <SecondaryActionButton onClick={() => setPick({ tekst: "", soort: "naam" })} disabled={uit || bezig !== null || !!p.nietBeginnen}>
+            Tekst anonimiseren…
           </SecondaryActionButton>
         )}
       </div>
@@ -272,9 +276,15 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
 
       {pick && (
         <div className="oa-kader oa-anon-toevoegen">
-          <Paragraph small>
-            Selectie: <q>{pick.tekst.length > 60 ? `${pick.tekst.slice(0, 59)}…` : pick.tekst}</q>
-          </Paragraph>
+          <label className="oa-klein oa-blok">
+            {adapter.leesSelectie ? "Selectie" : "Tekst zoals die in het document staat"}
+            <input
+              type="text"
+              value={pick.tekst}
+              onChange={(e) => setPick({ ...pick, tekst: e.target.value })}
+              onBlur={() => pick.tekst.trim() && pick.soort === "naam" && setPick({ ...pick, soort: anonimiseren.raadSoort(pick.tekst.trim()) })}
+            />
+          </label>
           <label className="oa-klein">
             Soort{" "}
             <select value={pick.soort} onChange={(e) => setPick({ ...pick, soort: e.target.value as PiiSoort })}>
@@ -286,7 +296,7 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
             </select>
           </label>
           <div className="oa-rij">
-            <SecondaryActionButton onClick={() => voegToe(pick.tekst, pick.soort)} disabled={bezig !== null}>
+            <SecondaryActionButton onClick={() => voegToe(pick.tekst, pick.soort)} disabled={bezig !== null || pick.tekst.trim().length < 2}>
               Anonimiseer
             </SecondaryActionButton>
             <SubtleButton onClick={() => setPick(null)}>Annuleer</SubtleButton>

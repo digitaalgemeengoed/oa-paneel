@@ -1,5 +1,9 @@
 # Wijzigingen
 
+## 0.8.1 — 2026-11-09
+
+- "Tekst anonimiseren…" voor werkomgevingen die de selectie niet doorgeven (Collabora): typ de tekst zoals die in het document staat. De tekst van een selectie is ook aan te passen.
+
 ## 0.8.0 — 2026-11-09
 
 **Anonimiseren in het document**, zoals de MIRA-demo, in werkomgevingen die het kunnen (nu de demo; Word en LibreOffice volgen):
