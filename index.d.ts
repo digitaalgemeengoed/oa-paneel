@@ -13,7 +13,7 @@ export interface ModuleInfo {
 }
 
 /** Een opdracht van een knop in de werkbalk van de werkomgeving. */
-export type Opdracht = ModuleId | "beoordelen";
+export type Opdracht = ModuleId | "beoordelen" | "anon-selectie";
 
 /** Publieke API van het paneel. */
 export interface PaneelProps {

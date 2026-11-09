@@ -36,6 +36,8 @@ import {
 } from "@digitaalgemeengoed/oa-kern";
 import { Motorkap, type Aanroep } from "./Motorkap";
 import { Anonimiseren } from "./Anonimiseren";
+import { AnonimiserenInDocument } from "./AnonimiserenInDocument";
+import { Versies } from "./Versies";
 import { GEBEURTENIS, Icoon, isModule, MODULES, type ModuleId, type Opdracht } from "./modules";
 
 const THEMA: Record<string, string> = { haarlem: "haarlem-theme" };
@@ -75,7 +77,7 @@ type Melding = { soort: "info" | "warning" | "error" | "ok"; tekst: string } | n
  * omgeving niet kan, doet de assistent op een andere manier en zegt dat.
  */
 export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module = "ovz" }: PaneelProps) {
-  const [actief, setActief] = useState<ModuleId>(module === "beoordelen" ? "toeg" : module);
+  const [actief, setActief] = useState<ModuleId>(module === "beoordelen" ? "toeg" : module === "anon-selectie" ? "anon" : module);
   const [aanroepen, setAanroepen] = useState<Aanroep[]>([]);
   const verbinding = useMemo(
     () =>
@@ -260,17 +262,30 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
 
   // Knoppen in de werkbalk van de werkomgeving sturen een opdracht (zie modules.tsx).
   const [beoordeelVerzoek, setBeoordeelVerzoek] = useState(module === "beoordelen" ? 1 : 0);
+  const [selectieVerzoek, setSelectieVerzoek] = useState(module === "anon-selectie" ? 1 : 0);
+  const [piiKlik, setPiiKlik] = useState<{ plek: string; n: number } | null>(null);
   useEffect(() => {
     const luister = (e: Event) => {
       const o = (e as CustomEvent<unknown>).detail;
       if (o === "beoordelen") {
         setActief("toeg");
         setBeoordeelVerzoek((n) => n + 1);
+      } else if (o === "anon-selectie") {
+        setActief("anon");
+        setSelectieVerzoek((n) => n + 1);
       } else if (isModule(o)) setActief(o);
     };
     window.addEventListener(GEBEURTENIS, luister);
     return () => window.removeEventListener(GEBEURTENIS, luister);
   }, []);
+  // Een klik op een plaatshouder in het document opent Anonimiseren bij die kaart.
+  useEffect(() => {
+    if (!adapter.bijPiiKlik || !heeftVermogen(adapter.werkomgeving(), "pii-klik")) return;
+    return adapter.bijPiiKlik((p) => {
+      setActief("anon");
+      setPiiKlik((k) => ({ plek: p.plek, n: (k?.n ?? 0) + 1 }));
+    });
+  }, [adapter]);
   useEffect(() => {
     if (beoordeelVerzoek && wie && !bezig) doeBeoordelen();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -412,6 +427,27 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
                       </DataListItem>
                     )}
                   </DataList>
+                  {stand!.object!.versies.length > 1 && (
+                    <details className="oa-versies-blok">
+                      <summary>Versies ({stand!.object!.versies.length})</summary>
+                      <Versies
+                        versies={stand!.object!.versies}
+                        niveau={wie?.niveau ?? 0}
+                        beheerder={!!wie?.rollen.includes("beheerder")}
+                        zetTerug={async (nummer, reden) =>
+                          voerUit("terugzetten", async () => {
+                            const s = await anonimiseren.zetVersieTerug(adapter, verbinding, stand!, nummer, reden);
+                            setStand(s);
+                            setAfwijking("gelijk");
+                            await laadGeschiedenis(s);
+                            setMelding({ soort: "warning", tekst: `Versie ${nummer} is teruggezet als versie ${s.object!.versies.at(-1)!.nummer}. Staan er persoonsgegevens in, dan staan die nu weer in het document.` });
+                          })
+                        }
+                        bezig={bezig}
+                        uit={uit}
+                      />
+                    </details>
+                  )}
                   {afwijking === "afwijkend" && (
                     <div className="oa-kader" role="note">
                       <Paragraph small>
@@ -567,7 +603,29 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
           </section>
         )}
 
-        {actief === "anon" && (
+        {actief === "anon" && stand && anonimiseren.kanInDocument(adapter) && (
+          <AnonimiserenInDocument
+            adapter={adapter}
+            verbinding={verbinding}
+            stand={stand}
+            zetStand={(s) => {
+              setStand(s);
+              setAfwijking("gelijk");
+            }}
+            niveau={wie?.niveau ?? 0}
+            beheerder={!!wie?.rollen.includes("beheerder")}
+            klik={piiKlik}
+            selectieVerzoek={selectieVerzoek}
+            nietBeginnen={!geregistreerd ? "Leg het stuk eerst vast (bij Metadateren): anonimiseren maakt een nieuwe versie, en het origineel blijft bewaard." : null}
+            naWijziging={laadGeschiedenis}
+            bezig={bezig}
+            setBezig={setBezig}
+            meld={(m) => setMelding(m)}
+            uit={uit}
+          />
+        )}
+
+        {actief === "anon" && !anonimiseren.kanInDocument(adapter) && (
           <Anonimiseren
             zoek={() => anonimiseren.vind(adapter, verbinding)}
             bevestig={async (gekozen) => {

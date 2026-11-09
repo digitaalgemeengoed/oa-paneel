@@ -229,3 +229,27 @@
 .oa-vernietig[open] { display: flex; flex-direction: column; gap: 6px; }
 .oa-blok { display: flex; flex-direction: column; gap: 2px; }
 .oa-blok textarea { font: inherit; width: 100%; box-sizing: border-box; }
+
+/* Anonimiseren in het document: kaarten zoals in de MIRA-demo. */
+.oa-kaarten { display: flex; flex-direction: column; gap: 6px; }
+.oa-kaart { border: 1px solid rgba(0, 0, 0, 0.12); border-radius: 6px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; }
+.oa-kaart.open { border-color: var(--utrecht-button-primary-action-background-color, #1a5ea8); box-shadow: 0 0 0 1px var(--utrecht-button-primary-action-background-color, #1a5ea8); }
+.oa-kaart.klaar { opacity: 0.75; }
+.oa-kaart-kop { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: start; }
+.oa-kaart-regel { overflow-wrap: anywhere; }
+.oa-plh-chip { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 0.8125rem; padding: 1px 5px; border-radius: 4px; border: 1px solid transparent; white-space: nowrap; font-weight: 500; }
+.oa-plh-chip.l1 { background: #e3f1e6; color: #1e6b33; }
+.oa-plh-chip.l2 { background: #fdf0d8; color: #8a5300; }
+.oa-plh-chip.l3 { background: #fbe3e3; color: #a4001d; }
+.oa-plh-chip.pv { border: 1px dashed currentColor; }
+.oa-plh-chip.leeg { font-family: inherit; background: transparent; border: 1px dotted #8a8a8a; white-space: normal; overflow-wrap: anywhere; }
+.oa-pil { font-size: 0.6875rem; font-weight: 600; padding: 0 5px; border-radius: 8px; background: rgba(0, 0, 0, 0.07); white-space: nowrap; }
+.oa-kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; margin: 0; font-size: 0.8125rem; }
+.oa-kv dt { opacity: 0.75; }
+.oa-kv dd { margin: 0; overflow-wrap: anywhere; }
+.oa-anon-status { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.oa-keuze { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.oa-versies { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.oa-versies li { display: flex; flex-direction: column; gap: 4px; padding-bottom: 6px; border-bottom: 1px solid rgba(0, 0, 0, 0.08); }
+.oa-versie-kop { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.oa-versies-blok summary { cursor: pointer; font-size: 0.875rem; }

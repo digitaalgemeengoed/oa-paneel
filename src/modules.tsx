@@ -72,9 +72,10 @@ export function icoonSvg(id: ModuleId, kleur = "#1d1d1b", grootte = 24): string 
 /**
  * Een opdracht van buiten het paneel: een knop in de werkbalk van de
  * werkomgeving. De host stuurt een DOM-gebeurtenis "oa-assistent" op
- * window, met als detail een module of "beoordelen".
+ * window, met als detail een module, "beoordelen" of "anon-selectie"
+ * (de selectie in het document anonimiseren).
  */
-export type Opdracht = ModuleId | "beoordelen";
+export type Opdracht = ModuleId | "beoordelen" | "anon-selectie";
 export const GEBEURTENIS = "oa-assistent";
 export function stuurOpdracht(o: Opdracht): void {
   window.dispatchEvent(new CustomEvent(GEBEURTENIS, { detail: o }));

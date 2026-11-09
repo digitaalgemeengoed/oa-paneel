@@ -1,5 +1,18 @@
 # Wijzigingen
 
+## 0.8.0 — 2026-11-09
+
+**Anonimiseren in het document**, zoals de MIRA-demo, in werkomgevingen die het kunnen (nu de demo; Word en LibreOffice volgen):
+
+- De plaatshouders staan in het document zelf, gekleurd per niveau en gestippeld zolang het een voorvertoning is. Klik je erop, dan opent het paneel de kaart.
+- Per gegeven een kaart: plaatshouder, PPL, AVG-artikel, algoritme, sleutel en het origineel (als je niveau het toelaat). Laat staan (alle plekken of alleen hier), toch anonimiseren, de-anonimiseren.
+- Anonimiseer selectie: knop in het paneel, in de werkbalk en (in de demo) in het rechtermuismenu. De soort wordt geraden.
+- Bevestigen legt een nieuwe versie vast; het origineel blijft bewaard.
+- Overzicht toont de versies (geanonimiseerd uit, teruggezet uit, bevat persoonsgegevens, alleen informatiebeheer) en kan een versie terugzetten.
+- Beheer: sleutel van een categorie vernietigen, met de keuze de originelen te beperken tot informatiebeheer.
+
+Waar de werkomgeving het nog niet kan, werkt anonimiseren zoals in 0.7.0 (voorbeeld in het paneel).
+
 ## 0.7.0 — 2026-11-09
 
 Module Anonimiseren werkt nu bij de bron, zoals de MIRA-demo:
