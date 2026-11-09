@@ -68,15 +68,31 @@ export interface PaneelProps {
   knoppen?: "rechts" | "boven";
   /** Met welke module het paneel opent; "beoordelen" opent Toegankelijkheid en beoordeelt meteen. */
   module?: Opdracht;
+  /**
+   * Opnieuw inloggen als de sessie verlopen is (of de server is bijgewerkt).
+   * Zonder: met het cookie naar het inloggen en terug naar deze pagina; met
+   * een sessiesleutel en zonder dit: geen knop.
+   */
+  opnieuwInloggen?: () => void;
 }
 
-type Melding = { soort: "info" | "warning" | "error" | "ok"; tekst: string } | null;
+type Melding = { soort: "info" | "warning" | "error" | "ok"; tekst: string; inloggen?: boolean } | null;
 
 /**
  * Het paneel van de assistent. Hetzelfde in elke werkomgeving; wat een
  * omgeving niet kan, doet de assistent op een andere manier en zegt dat.
  */
-export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module = "ovz" }: PaneelProps) {
+export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module = "ovz", opnieuwInloggen }: PaneelProps) {
+  const inloggen = useMemo(
+    () =>
+      opnieuwInloggen ??
+      (sessie
+        ? undefined
+        : () => {
+            location.href = `${basis}/api/auth/login?terug=${encodeURIComponent(location.pathname + location.search)}`;
+          }),
+    [opnieuwInloggen, sessie, basis],
+  );
   const [actief, setActief] = useState<ModuleId>(module === "beoordelen" ? "toeg" : module === "anon-selectie" ? "anon" : module);
   const [aanroepen, setAanroepen] = useState<Aanroep[]>([]);
   const verbinding = useMemo(
@@ -118,8 +134,12 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
       if (e.code === "metadata-ongeldig" && Array.isArray(e.details)) {
         setFouten(Object.fromEntries((e.details as { veld: string; melding: string }[]).map((d) => [d.veld, d.melding])));
       }
-      if (e.code === "niet-ingelogd") {
-        setMelding({ soort: "warning", tekst: "Je bent niet (meer) ingelogd. Log opnieuw in om de assistent te gebruiken." });
+      if (e.code === "niet-ingelogd" || e.status === 401) {
+        setMelding({
+          soort: "warning",
+          tekst: "Je bent niet meer ingelogd: de sessie is verlopen of de server is bijgewerkt. Log opnieuw in; wat in je document staat, blijft staan.",
+          inloggen: true,
+        });
         return;
       }
       setMelding({ soort: "error", tekst: e.message });
@@ -359,6 +379,11 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
         {melding && (
           <Alert type={melding.soort} role={melding.soort === "error" ? "alert" : "status"}>
             <Paragraph>{melding.tekst}</Paragraph>
+            {melding.inloggen && inloggen && (
+              <PrimaryActionButton type="button" onClick={inloggen}>
+                Opnieuw inloggen
+              </PrimaryActionButton>
+            )}
           </Alert>
         )}
 

@@ -22,6 +22,8 @@ export interface PaneelProps {
   basis?: string;
   /** Sessiesleutel als Authorization-kop, voor werkomgevingen waar het cookie niet werkt (Office-invoegtoepassing). */
   sessie?: string;
+  /** Opnieuw inloggen na een verlopen sessie. Zonder: met het cookie naar het inloggen; met een sessiesleutel: geen knop. */
+  opnieuwInloggen?: () => void;
   /** Knoppen van de modules rechts (standaard, zoals in de demo) of bovenaan (zijbalk van LibreOffice). */
   knoppen?: "rechts" | "boven";
   /** Met welke module het paneel opent (standaard Overzicht); "beoordelen" opent Toegankelijkheid en beoordeelt meteen. */
@@ -34,7 +36,7 @@ export declare function Paneel(props: PaneelProps): JSX.Element;
 export declare function plaatsPaneel(
   element: HTMLElement,
   adapter: Adapter,
-  opties?: { basis?: string; sessie?: string; knoppen?: "rechts" | "boven"; module?: Opdracht },
+  opties?: { basis?: string; sessie?: string; knoppen?: "rechts" | "boven"; module?: Opdracht; opnieuwInloggen?: () => void },
 ): () => void;
 
 export declare const MODULES: ModuleInfo[];

@@ -1,5 +1,9 @@
 # Wijzigingen
 
+## 0.8.2 — 2026-11-09
+
+Is de sessie verlopen (of de server bijgewerkt), dan staat bij de melding een knop **Opnieuw inloggen**. Wat in het document staat, blijft staan. Werkomgevingen met een sessiesleutel geven via `opnieuwInloggen` hun eigen manier van inloggen mee (Word: het aanmeldvenster).
+
 ## 0.8.1 — 2026-11-09
 
 - "Tekst anonimiseren…" voor werkomgevingen die de selectie niet doorgeven (Collabora): typ de tekst zoals die in het document staat. De tekst van een selectie is ook aan te passen.

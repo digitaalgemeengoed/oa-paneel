@@ -20,9 +20,9 @@ export { MODULES, GEBEURTENIS, stuurOpdracht, icoonSvg, isModule, type ModuleId,
 export function plaatsPaneel(
   element: HTMLElement,
   adapter: Adapter,
-  opties: { basis?: string; sessie?: string; knoppen?: "rechts" | "boven"; module?: Opdracht } = {},
+  opties: { basis?: string; sessie?: string; knoppen?: "rechts" | "boven"; module?: Opdracht; opnieuwInloggen?: () => void } = {},
 ): () => void {
   const wortel = createRoot(element);
-  wortel.render(createElement(Paneel, { adapter, basis: opties.basis, sessie: opties.sessie, knoppen: opties.knoppen, module: opties.module }));
+  wortel.render(createElement(Paneel, { adapter, basis: opties.basis, sessie: opties.sessie, knoppen: opties.knoppen, module: opties.module, opnieuwInloggen: opties.opnieuwInloggen }));
   return () => wortel.unmount();
 }
