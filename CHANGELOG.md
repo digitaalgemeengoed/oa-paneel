@@ -1,5 +1,9 @@
 # Wijzigingen
 
+## 0.6.0 — 2026-11-09
+
+Module **Anonimiseren**: persoonsgegevens zoeken, een voorbeeld met de treffers gemarkeerd, per soort aan of uit (standaard: namen, adressen, BSN, IBAN, telefoon, e-mail, kenteken, zaaknummer), een treffer terugzetten met een klik, gemiste gegevens toevoegen door tekst te selecteren (desgewenst overal waar die tekst staat), schakelen tussen controleren en resultaat, en bevestigen: dan legt het platform de geanonimiseerde weergave vast bij de laatste versie. Het document zelf verandert niet. Overzicht laat zien of de versie is geanonimiseerd.
+
 ## 0.5.0 — 2026-11-09
 
 Het paneel heeft **modules**, zoals de demo (MIRA): Overzicht, Onderdelen, Metadateren, Toegankelijkheid, Anonimiseren, Classificeren, Waarmerken, Workflow en Help, met knoppen aan de zijkant (`knoppen: "rechts"`, standaard) of bovenaan (`"boven"`, voor de zijbalk van LibreOffice). Wat het prototype nog niet heeft, staat erin met "volgt". Tellers op de knoppen; pijltoetsen in de rij.

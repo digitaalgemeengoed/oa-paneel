@@ -167,3 +167,43 @@
 .oa-keuze button:disabled:not([aria-pressed="true"]) { opacity: 0.55; }
 .oa-keuze button:focus-visible { outline: 2px solid var(--utrecht-focus-outline-color, #1a5ea8); outline-offset: -3px; }
 .oa-kader { border-inline-start: 4px solid #c47a00; background: rgba(196, 122, 0, 0.08); padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+
+/* Anonimiseren: voorbeeld met gemarkeerde gegevens. */
+.oa-soorten { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.oa-soorten legend { font-weight: 600; margin-bottom: 4px; }
+.oa-soorten label { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; }
+.oa-soorten input, .oa-anon-toevoegen input { width: 16px; height: 16px; accent-color: var(--utrecht-button-primary-action-background-color, #1a5ea8); }
+.oa-anon-weergave { display: inline-flex; border: 1px solid var(--utrecht-form-control-border-color, #767676); border-radius: 4px; overflow: hidden; align-self: flex-start; }
+.oa-anon-weergave button { font: inherit; font-size: 0.875rem; padding: 4px 12px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.oa-anon-weergave button + button { border-inline-start: 1px solid var(--utrecht-form-control-border-color, #767676); }
+.oa-anon-weergave button[aria-pressed="true"] { background: var(--utrecht-button-primary-action-background-color, #1a5ea8); color: #fff; }
+.oa-anon-voorbeeld {
+  border: 1px solid var(--utrecht-separator-color, #ccc);
+  border-radius: 4px;
+  padding: 8px 10px;
+  max-height: 46vh;
+  overflow-y: auto;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  background: var(--utrecht-form-control-background-color, #fff);
+}
+.oa-anon-voorbeeld:focus-visible { outline: 2px solid var(--utrecht-focus-outline-color, #1a5ea8); }
+.oa-anon-blok { margin: 0 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.oa-anon-blok:last-child { margin-bottom: 0; }
+.oa-pii {
+  font: inherit;
+  line-height: inherit;
+  padding: 0 2px;
+  margin: 0;
+  border: 0;
+  border-radius: 2px;
+  background: #1d1d1b;
+  color: #fff;
+  cursor: pointer;
+}
+.oa-pii.oa-pii-mw { background: #5b2a86; }
+.oa-pii.oa-pii-terug { background: transparent; color: inherit; outline: 1px dashed #8a8a8a; text-decoration: line-through; text-decoration-color: #8a8a8a; }
+.oa-pii:focus-visible { outline: 2px solid var(--utrecht-focus-outline-color, #1a5ea8); outline-offset: 1px; }
+.oa-pii-label { background: #1d1d1b; color: #fff; padding: 0 3px; border-radius: 2px; font-size: 0.8125rem; }
+.oa-anon-toon { margin-inline-start: 6px; font-size: 0.75rem; }
+.oa-anon-toevoegen select { font: inherit; }

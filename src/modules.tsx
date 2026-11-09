@@ -25,13 +25,7 @@ export const MODULES: ModuleInfo[] = [
   },
   { id: "meta", naam: "Metadateren", onder: "Kenmerken, en wie dat zegt" },
   { id: "toeg", naam: "Toegankelijkheid", onder: "Structuur en alternatieve tekst" },
-  {
-    id: "anon",
-    naam: "Anonimiseren",
-    onder: "Persoonsgegevens vinden en afschermen",
-    volgt:
-      "De assistent vindt persoonsgegevens en stelt voor ze af te schermen. Je ziet eerst een voorbeeld en kunt onterechte treffers terugzetten of gemiste toevoegen. Pas als je bevestigt, wordt de geanonimiseerde weergave vastgelegd; het origineel blijft zoals het is. In een rekenblad met een dataset wordt het pseudonimiseren.",
-  },
+  { id: "anon", naam: "Anonimiseren", onder: "Persoonsgegevens vinden en afschermen" },
   {
     id: "clas",
     naam: "Classificeren",

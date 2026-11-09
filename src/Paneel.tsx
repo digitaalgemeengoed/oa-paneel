@@ -26,6 +26,7 @@ import {
   legMetadataVast,
   legVersieVast,
   maakZakelijk,
+  anonimiseren,
   registreer,
   vergelijkMetLaatsteVersie,
   Verbinding,
@@ -34,6 +35,7 @@ import {
   type Veld,
 } from "@digitaalgemeengoed/oa-kern";
 import { Motorkap, type Aanroep } from "./Motorkap";
+import { Anonimiseren } from "./Anonimiseren";
 import { GEBEURTENIS, Icoon, isModule, MODULES, type ModuleId, type Opdracht } from "./modules";
 
 const THEMA: Record<string, string> = { haarlem: "haarlem-theme" };
@@ -369,6 +371,16 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
                       <DataListKey>Versie</DataListKey>
                       <DataListValue>{stand!.object!.versies.at(-1)?.nummer ?? "geen"}</DataListValue>
                     </DataListItem>
+                    {stand!.object!.versies.at(-1)?.weergaven?.some((w) => w.soort === "geanonimiseerd") && (
+                      <DataListItem>
+                        <DataListKey>Geanonimiseerd</DataListKey>
+                        <DataListValue>
+                          <button type="button" className="oa-link" onClick={() => setActief("anon")}>
+                            ja, bij deze versie
+                          </button>
+                        </DataListValue>
+                      </DataListItem>
+                    )}
                     {stand!.object!.versies.at(-1) && (
                       <DataListItem>
                         <DataListKey>Bestand</DataListKey>
@@ -551,6 +563,36 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
               <Paragraph small>Deze werkomgeving kan niet naar een plek in het document springen. De omschrijving zegt waar het is.</Paragraph>
             )}
           </section>
+        )}
+
+        {actief === "anon" && (
+          <Anonimiseren
+            zoek={() => anonimiseren.vind(adapter, verbinding)}
+            bevestig={async (gevonden, gekozen) => {
+              const r = await anonimiseren.bevestig(verbinding, stand!, gevonden, gekozen);
+              setStand(r.stand);
+              setAfwijking("gelijk");
+              await laadGeschiedenis(r.stand);
+              return r.overzicht;
+            }}
+            nietBevestigen={
+              !geregistreerd
+                ? "Leg het stuk eerst vast (bij Metadateren): de geanonimiseerde weergave hoort bij een versie."
+                : afwijking === "afwijkend"
+                  ? `Het stuk is gewijzigd sinds versie ${stand!.object!.versies.at(-1)?.nummer}. Leg eerst een nieuwe versie vast (bij Overzicht).`
+                  : null
+            }
+            alGeanonimiseerd={
+              (stand?.object?.versies.at(-1)?.weergaven ?? [])
+                .filter((w) => w.soort === "geanonimiseerd")
+                .reduce<number | null>((m, w) => Math.max(m ?? 0, w.volgnummer ?? 1), null)
+            }
+            toon={kanTonen ? (plek) => adapter.toonPlek!(plek) : undefined}
+            bezig={bezig}
+            setBezig={setBezig}
+            meld={(m) => setMelding(m)}
+            uit={uit}
+          />
         )}
 
         {info.volgt && (

@@ -40,7 +40,8 @@ Dezelfde modules en volgorde als de demo (MIRA). Wat het prototype nog niet heef
 | Onderdelen | volgt |
 | Metadateren | Zakelijk of persoonlijk (verplicht); voor zakelijk de velden uit het objecttype met voorstellen; registreren of vastleggen. Persoonlijk: geen metadata, eigen opslag, alleen voor jou; later zakelijk maken kan altijd. |
 | Toegankelijkheid | Beoordelen, per bevinding de plek tonen en herstellen. |
-| Anonimiseren, Classificeren, Waarmerken, Workflow | volgt |
+| Anonimiseren | Persoonsgegevens zoeken (OpenAnonymiser), een voorbeeld met de treffers, terugzetten en toevoegen, en na bevestiging de geanonimiseerde weergave vastleggen bij de versie. Het document zelf verandert niet. |
+| Classificeren, Waarmerken, Workflow | volgt |
 | Help | Wat waar staat, en onder de motorkap: de vermogens van de werkomgeving, de laatste aanroepen en de gebeurtenissen van het stuk. |
 
 Valt het platform weg, dan stopt het paneel met aanbieden wat het niet kan waarmaken en zegt dat; het werk in de werkomgeving gaat door.
