@@ -1,5 +1,9 @@
 # Wijzigingen
 
+## 0.9.0 — 2026-11-09
+
+Het paneel Metadateren volgt het metadatamodel van de gemeente (beheerportaal, pagina Metadatamodel): de velden, labels, hulpteksten, waardelijsten en volgorde. Datum- en getalvelden. Een stuk dat al is vastgelegd, toont de velden van het model waarmee het is vastgelegd.
+
 ## 0.8.4 — 2026-11-09
 
 **Grondslag begrijpelijk en aan te passen.** Bij elk persoonsgegeven stond alleen "AVG artikel 6". Nu:

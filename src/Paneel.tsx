@@ -160,7 +160,10 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
     let weg = false;
     (async () => {
       try {
-        const [w, t, s, inhoud] = await Promise.all([verbinding.wieBenIk(), verbinding.objecttype(OBJECTTYPE), bepaalStand(adapter, verbinding), adapter.leverInhoud()]);
+        const [w, actief, s, inhoud] = await Promise.all([verbinding.wieBenIk(), verbinding.objecttype(OBJECTTYPE), bepaalStand(adapter, verbinding), adapter.leverInhoud()]);
+        // Een vastgelegd stuk houdt het metadatamodel waarmee het is vastgelegd.
+        const eigen = s.object?.objecttype;
+        const t = eigen && (eigen.naam !== actief.naam || eigen.versie !== actief.versie) ? await verbinding.objecttype(eigen.naam, eigen.versie) : actief;
         if (weg) return;
         setOnbereikbaar(false);
         setWie(w);
@@ -168,7 +171,7 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
         setStand(s);
         const huidig = (s.object?.metadata ?? {}) as Record<string, string>;
         setMetadata(huidig);
-        setVoorstellen(metadateren.suggesties(inhoud, huidig));
+        setVoorstellen(metadateren.suggesties(inhoud, huidig, t));
         if (s.terugval) setMelding({ soort: "info", tekst: s.terugval });
         if (s.object) setAfwijking(await vergelijkMetLaatsteVersie(s, inhoud));
         await laadGeschiedenis(s);
@@ -201,7 +204,7 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
   const doeRegistreren = () =>
     voerUit("registreren", async () => {
       setFouten({});
-      const s = await registreer(adapter, verbinding, OBJECTTYPE, metadata, aardKeuze ?? "zakelijk");
+      const s = await registreer(adapter, verbinding, OBJECTTYPE, metadata, aardKeuze ?? "zakelijk", type ?? undefined);
       setStand(s);
       setAfwijking("gelijk");
       setMetadata(s.object!.metadata as Record<string, string>);
@@ -237,7 +240,7 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
   const doeMetadata = () =>
     voerUit("metadata", async () => {
       setFouten({});
-      const s = await legMetadataVast(verbinding, stand!, metadata);
+      const s = await legMetadataVast(verbinding, stand!, metadata, type ?? undefined);
       setStand(s);
       setMelding({ soort: "ok", tekst: "De metadata is vastgelegd." });
       await laadGeschiedenis(s);
@@ -746,5 +749,7 @@ function veldInvoer(v: Veld, waarde: string, zet: (w: string) => void, ongeldig:
   if (v.soort === "lange-tekst") {
     return <Textarea id={id} value={waarde} invalid={ongeldig} maxLength={v.maxLengte} rows={3} onChange={(e) => zet(e.target.value)} />;
   }
+  if (v.soort === "datum") return <Textbox id={id} type="date" value={waarde} invalid={ongeldig} onChange={(e) => zet(e.target.value)} />;
+  if (v.soort === "getal") return <Textbox id={id} inputMode="decimal" value={waarde} invalid={ongeldig} onChange={(e) => zet(e.target.value)} />;
   return <Textbox id={id} value={waarde} invalid={ongeldig} maxLength={v.maxLengte} onChange={(e) => zet(e.target.value)} />;
 }
