@@ -1,5 +1,9 @@
 # Wijzigingen
 
+## 0.8.3 — 2026-11-09
+
+Bevindingen uit het bestand zelf staan erbij met "uit het bestand". Ze hebben geen plek in de html: geen knop Toon of Herstellen, wel de uitleg wat te doen.
+
 ## 0.8.2 — 2026-11-09
 
 Is de sessie verlopen (of de server bijgewerkt), dan staat bij de melding een knop **Opnieuw inloggen**. Wat in het document staat, blijft staan. Werkomgevingen met een sessiesleutel geven via `opnieuwInloggen` hun eigen manier van inloggen mee (Word: het aanmeldvenster).

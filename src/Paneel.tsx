@@ -596,10 +596,11 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
                     <Paragraph small>
                       {b.regel}
                       {b.plek ? ` · ${b.plek.beschrijving}` : ""}
+                      {b.bron === "bestand" && <span className="oa-bron" title="Gevonden in het bestand zelf, niet in wat het paneel van de inhoud ziet. Herstel dit in het document."> · uit het bestand</span>}
                     </Paragraph>
                     {b.voorstel?.beschrijving && <Paragraph small>{b.voorstel.beschrijving}</Paragraph>}
                     <div className="oa-acties">
-                      {b.plek && kanTonen && <SubtleButton onClick={() => adapter.toonPlek!(b.plek!)}>Toon</SubtleButton>}
+                      {b.plek?.pad && kanTonen && <SubtleButton onClick={() => adapter.toonPlek!(b.plek!)}>Toon</SubtleButton>}
                       {b.voorstel?.vraag && (
                         <Textbox
                           aria-label={b.voorstel.vraag.label}
@@ -608,7 +609,7 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
                           onChange={(e) => setAntwoorden((a) => ({ ...a, [b.id]: e.target.value }))}
                         />
                       )}
-                      {(b.voorstel?.vervanging || b.voorstel?.vraag) && b.plek && (
+                      {(b.voorstel?.vervanging || b.voorstel?.vraag) && b.plek?.pad && (
                         <SecondaryActionButton
                           onClick={() => doeHerstel(b)}
                           disabled={bezig !== null || (!!b.voorstel?.vraag && b.voorstel.vraag.veld !== "alt" && !antwoorden[b.id])}

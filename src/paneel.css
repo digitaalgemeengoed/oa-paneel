@@ -254,3 +254,10 @@
 .oa-versie-kop { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
 .oa-versies-blok summary { cursor: pointer; font-size: 0.875rem; }
 .oa-anon-toevoegen input[type="text"] { font: inherit; width: 100%; height: auto; accent-color: auto; box-sizing: border-box; padding: 3px 6px; }
+
+/* Een bevinding uit het bestand zelf (oa-wcag): de assistent kan haar niet aanwijzen of herstellen. */
+.oa-bron {
+  color: var(--utrecht-document-color, inherit);
+  opacity: 0.75;
+  font-style: italic;
+}
