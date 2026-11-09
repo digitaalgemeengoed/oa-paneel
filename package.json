@@ -1,6 +1,6 @@
 {
   "name": "@digitaalgemeengoed/oa-paneel",
-  "version": "0.8.3",
+  "version": "0.8.4",
   "description": "Het paneel van de Office Assistent in React, met NL Design System. Gelijk in elke werkomgeving.",
   "license": "EUPL-1.2",
   "type": "module",
@@ -23,8 +23,8 @@
   "dependencies": {
     "@nl-design-system-unstable/haarlem-design-tokens": "1.0.0",
     "@nl-design-system-unstable/voorbeeld-design-tokens": "^14.2.0",
-    "@digitaalgemeengoed/oa-contract": "^0.4.1",
-    "@digitaalgemeengoed/oa-kern": "^0.4.2",
+    "@digitaalgemeengoed/oa-contract": "^0.4.2",
+    "@digitaalgemeengoed/oa-kern": "^0.4.3",
     "@utrecht/component-library-css": "^9.0.16",
     "@utrecht/component-library-react": "^15.0.1",
     "react": "^19.3.1",

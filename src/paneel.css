@@ -244,9 +244,12 @@
 .oa-plh-chip.pv { border: 1px dashed currentColor; }
 .oa-plh-chip.leeg { font-family: inherit; background: transparent; border: 1px dotted #8a8a8a; white-space: normal; overflow-wrap: anywhere; }
 .oa-pil { font-size: 0.6875rem; font-weight: 600; padding: 0 5px; border-radius: 8px; background: rgba(0, 0, 0, 0.07); white-space: nowrap; }
-.oa-kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; margin: 0; font-size: 0.8125rem; }
+.oa-kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 8px; margin: 0; font-size: 0.8125rem; }
 .oa-kv dt { opacity: 0.75; }
 .oa-kv dd { margin: 0; overflow-wrap: anywhere; }
+.oa-grondslag { display: flex; flex-direction: column; gap: 2px; }
+.oa-grondslag select { width: 100%; max-width: 100%; font: inherit; text-overflow: ellipsis; }
+.oa-grondslag .oa-let-op { color: var(--oa-waarschuwing, #8a5300); }
 .oa-anon-status { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .oa-keuze { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .oa-versies { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }

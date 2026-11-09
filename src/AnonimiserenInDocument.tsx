@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Paragraph, PrimaryActionButton, SecondaryActionButton, StatusBadge, SubtleButton } from "@utrecht/component-library-react";
-import { PII_CATEGORIE, PII_SOORT, type Adapter, type PiiCategorie, type PiiSoort, type Ppl } from "@digitaalgemeengoed/oa-contract";
+import { PII_CATEGORIE, PII_SOORT, grondslagLabel, type Adapter, type PiiCategorie, type PiiSoort, type Ppl } from "@digitaalgemeengoed/oa-contract";
 import { anonimiseren, type PiiKaart, type Sessie, type Stand, type Verbinding } from "@digitaalgemeengoed/oa-kern";
 import { SOORTNAAM } from "./Anonimiseren";
 
 const SOORTEN = Object.keys(SOORTNAAM) as PiiSoort[];
 const CATEGORIEEN = Object.keys(PII_CATEGORIE) as PiiCategorie[];
-const artikel = (c: PiiCategorie) => `AVG art. ${PII_CATEGORIE[c].artikel}`;
+const artikel = (c: PiiCategorie) => `${PII_CATEGORIE[c].omschrijving} (art. ${PII_CATEGORIE[c].artikel})`;
 
 export interface AnonimiserenInDocumentProps {
   adapter: Adapter;
@@ -38,7 +38,7 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
   const [sessie, setSessie] = useState<Sessie | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [gekozenPlek, setGekozenPlek] = useState<string | null>(null);
-  const [pick, setPick] = useState<{ tekst: string; soort: PiiSoort } | null>(null);
+  const [pick, setPick] = useState<{ tekst: string; soort: PiiSoort; categorie?: PiiCategorie } | null>(null);
   const [vernietigCat, setVernietigCat] = useState<PiiCategorie | "">("");
   const [originelen, setOriginelen] = useState<"laten" | "beperken">("beperken");
   const [reden, setReden] = useState("");
@@ -110,9 +110,9 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
       });
     });
 
-  const voegToe = (waarde: string, soort: PiiSoort, bron?: PiiKaart["bron"]) =>
+  const voegToe = (waarde: string, soort: PiiSoort, bron?: PiiKaart["bron"], categorie?: PiiCategorie) =>
     doe("anon-toevoegen", async () => {
-      const s = await anonimiseren.voegToe(adapter, verbinding, stand, sessie ?? { bronversie: (await anonimiseren.begin(adapter, verbinding, stand)).bronversie, kaarten: [] }, { waarde, soort, bron });
+      const s = await anonimiseren.voegToe(adapter, verbinding, stand, sessie ?? { bronversie: (await anonimiseren.begin(adapter, verbinding, stand)).bronversie, kaarten: [] }, { waarde, soort, bron, categorie });
       setSessie(s);
       setPick(null);
       const k = s.kaarten.find((x) => x.status === "voorvertoning" && x.waarde === waarde.replace(/\s+/g, " ").trim());
@@ -127,6 +127,15 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
         meld({ soort: "warning", tekst: `${k.plaatshouder} is teruggezet in het document. Leg een nieuwe versie vast; die vraagt PPL ${k.ppl} om te lezen.` });
         await p.naWijziging(stand);
       }
+    });
+
+  const wijzigGrondslag = (k: PiiKaart, categorie: PiiCategorie) =>
+    doe("anon-grondslag", async () => {
+      setSessie(await anonimiseren.wijzigCategorie(adapter, verbinding, stand, sessie!, k.sleutel, categorie));
+      meld({
+        soort: "info",
+        tekst: `${k.plaatshouder ?? SOORTNAAM[k.soort]}: grondslag is nu ${grondslagLabel(categorie)}. Het origineel vraagt PPL ${PII_CATEGORIE[categorie].ppl}.`,
+      });
     });
 
   const toonOrigineel = (k: PiiKaart) =>
@@ -204,7 +213,20 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
                 )}
               </dd>
               <dt>Grondslag</dt>
-              <dd>AVG artikel {PII_CATEGORIE[k.categorie].artikel}</dd>
+              <dd>
+                <Grondslag
+                  categorie={k.categorie}
+                  standaard={PII_SOORT[k.soort].categorie}
+                  soort={SOORTNAAM[k.soort]}
+                  wijzig={
+                    k.status === "bevestigd"
+                      ? { kan: false, reden: "Ligt vast na bevestigen. Wil je een andere grondslag, kies dan De-anonimiseer en anonimiseer opnieuw." }
+                      : k.status === "voorvertoning" && niveau < k.ppl
+                        ? { kan: false, reden: `Wijzigen vraagt PPL ${k.ppl}: je moet het origineel kunnen lezen.` }
+                        : { kan: !uit && bezig === null, bij: (c) => wijzigGrondslag(k, c) }
+                  }
+                />
+              </dd>
               {k.plaatshouder && (
                 <>
                   <dt>Algoritme</dt>
@@ -236,7 +258,7 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
                 </SecondaryActionButton>
               )}
               {k.status === "laat-staan" && k.waarde && (
-                <SecondaryActionButton onClick={() => voegToe(k.waarde!, k.soort, k.bron)} disabled={uit || bezig !== null}>
+                <SecondaryActionButton onClick={() => voegToe(k.waarde!, k.soort, k.bron, k.categorie)} disabled={uit || bezig !== null}>
                   Toch anonimiseren
                 </SecondaryActionButton>
               )}
@@ -255,7 +277,7 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
       </Paragraph>
       <p className="oa-klein">
         Jouw niveau: PPL {niveau}
-        {niveau < 3 ? ` (originelen van ${CATEGORIEEN.filter((c) => PII_CATEGORIE[c].ppl <= niveau).map((c) => `art. ${PII_CATEGORIE[c].artikel}`).join(" en ") || "geen enkele categorie"})` : " (alle categorieën)"}
+        {niveau < 3 ? ` (originelen van ${CATEGORIEEN.filter((c) => PII_CATEGORIE[c].ppl <= niveau).map((c) => artikel(c)).join(" en ") || "geen enkele categorie"})` : " (alle categorieën)"}
       </p>
 
       <div className="oa-rij">
@@ -287,16 +309,25 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
           </label>
           <label className="oa-klein">
             Soort{" "}
-            <select value={pick.soort} onChange={(e) => setPick({ ...pick, soort: e.target.value as PiiSoort })}>
+            <select value={pick.soort} onChange={(e) => setPick({ ...pick, soort: e.target.value as PiiSoort, categorie: undefined })}>
               {SOORTEN.map((s) => (
                 <option key={s} value={s}>
-                  {SOORTNAAM[s]} (art. {PII_CATEGORIE[PII_SOORT[s].categorie].artikel})
+                  {SOORTNAAM[s]}
                 </option>
               ))}
             </select>
           </label>
+          <div className="oa-klein oa-blok">
+            Grondslag
+            <Grondslag
+              categorie={pick.categorie ?? PII_SOORT[pick.soort].categorie}
+              standaard={PII_SOORT[pick.soort].categorie}
+              soort={SOORTNAAM[pick.soort]}
+              wijzig={{ kan: bezig === null, bij: (c) => setPick({ ...pick, categorie: c }) }}
+            />
+          </div>
           <div className="oa-rij">
-            <SecondaryActionButton onClick={() => voegToe(pick.tekst, pick.soort)} disabled={bezig !== null || pick.tekst.trim().length < 2}>
+            <SecondaryActionButton onClick={() => voegToe(pick.tekst, pick.soort, undefined, pick.categorie)} disabled={bezig !== null || pick.tekst.trim().length < 2}>
               Anonimiseer
             </SecondaryActionButton>
             <SubtleButton onClick={() => setPick(null)}>Annuleer</SubtleButton>
@@ -370,3 +401,43 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
   );
 }
 
+
+/**
+ * De grondslag van een persoonsgegeven: de AVG-categorie in gewone taal, met
+ * uitleg, en (als het mag) een keuze voor een andere.
+ */
+function Grondslag(p: {
+  categorie: PiiCategorie;
+  standaard: PiiCategorie;
+  soort: string;
+  wijzig: { kan: boolean; bij?: (c: PiiCategorie) => void; reden?: string };
+}) {
+  const info = PII_CATEGORIE[p.categorie];
+  const afwijkend = p.categorie !== p.standaard;
+  const lager = PII_CATEGORIE[p.categorie].ppl < PII_CATEGORIE[p.standaard].ppl;
+  return (
+    <div className="oa-grondslag">
+      {p.wijzig.bij ? (
+        <select aria-label="Grondslag" value={p.categorie} disabled={!p.wijzig.kan} onChange={(e) => p.wijzig.bij!(e.target.value as PiiCategorie)}>
+          {CATEGORIEEN.map((c) => (
+            <option key={c} value={c}>
+              {grondslagLabel(c)}
+              {c === p.standaard ? " (standaard)" : ""}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <b>{grondslagLabel(p.categorie)}</b>
+      )}
+      <span className="oa-klein oa-blok">{info.uitleg}</span>
+      {afwijkend && (
+        <span className={`oa-klein oa-blok${lager ? " oa-let-op" : ""}`}>
+          {lager
+            ? `Let op: lager dan gebruikelijk voor ${p.soort.toLowerCase()} (${grondslagLabel(p.standaard)}). Meer mensen kunnen het origineel dan lezen.`
+            : `Afwijkend van de standaard voor ${p.soort.toLowerCase()} (${grondslagLabel(p.standaard)}).`}
+        </span>
+      )}
+      {p.wijzig.reden && <span className="oa-klein oa-blok">{p.wijzig.reden}</span>}
+    </div>
+  );
+}

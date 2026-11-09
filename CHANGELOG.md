@@ -1,5 +1,16 @@
 # Wijzigingen
 
+## 0.8.4 — 2026-11-09
+
+**Grondslag begrijpelijk en aan te passen.** Bij elk persoonsgegeven stond alleen "AVG artikel 6". Nu:
+
+- De grondslag in gewone taal ("AVG art. 9 · bijzondere persoonsgegevens") met een korte uitleg wat eronder valt en wat de AVG ervan zegt.
+- Een keuzelijst om de grondslag te wijzigen, zolang het een voorvertoning is (of het gegeven blijft staan). Je moet het origineel kunnen lezen. De plaatshouder krijgt de kleur van het nieuwe niveau.
+- Afwijkend van de standaard voor die soort? Dat staat erbij; lager dan gebruikelijk met een waarschuwing (meer mensen kunnen het origineel dan lezen).
+- Na bevestigen ligt de grondslag vast; de kaart zegt hoe je hem toch wijzigt (De-anonimiseer en opnieuw).
+- Bij Anonimiseer selectie kies je de grondslag meteen.
+- Ook bij anonimiseren bij de bron staat de omschrijving naast het artikel.
+
 ## 0.8.3 — 2026-11-09
 
 Bevindingen uit het bestand zelf staan erbij met "uit het bestand". Ze hebben geen plek in de html: geen knop Toon of Herstellen, wel de uitleg wat te doen.

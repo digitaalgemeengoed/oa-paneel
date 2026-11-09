@@ -329,7 +329,7 @@ export function Anonimiseren(p: AnonimiserenProps) {
       </Paragraph>
       <p className="oa-klein">
         Jouw niveau: PPL {niveau}
-        {niveau < 3 ? ` (je kunt ${CATEGORIEEN.filter((c) => PII_CATEGORIE[c].ppl <= niveau).map(artikel).join(" en ") || "geen gegevens"} inzien)` : " (alle categorieën)"}
+        {niveau < 3 ? ` (je kunt ${CATEGORIEEN.filter((c) => PII_CATEGORIE[c].ppl <= niveau).map((c) => `${PII_CATEGORIE[c].omschrijving} (${artikel(c)})`).join(" en ") || "geen gegevens"} inzien)` : " (alle categorieën)"}
       </p>
       <SecondaryActionButton onClick={doeZoeken} disabled={uit || bezig !== null} busy={bezig === "anon-zoeken"}>
         {gevonden ? "Opnieuw zoeken" : "Persoonsgegevens zoeken"}
@@ -348,7 +348,9 @@ export function Anonimiseren(p: AnonimiserenProps) {
                 <label key={soort}>
                   <input type="checkbox" checked={aan.has(soort)} onChange={() => wisselSoort(soort)} />
                   <span>
-                    {SOORTNAAM[soort]} <span className={`oa-cat oa-cat-${catVan(soort)}`}>{artikel(catVan(soort))}</span>
+                    {SOORTNAAM[soort]} <span className={`oa-cat oa-cat-${catVan(soort)}`} title={`${PII_CATEGORIE[catVan(soort)].omschrijving}: ${PII_CATEGORIE[catVan(soort)].uitleg}`}>
+                      {artikel(catVan(soort))} · {PII_CATEGORIE[catVan(soort)].omschrijving}
+                    </span>
                   </span>
                   <span className="oa-klein">
                     {g} van {totaal}
@@ -417,7 +419,7 @@ export function Anonimiseren(p: AnonimiserenProps) {
                 <select value={nieuweSoort} onChange={(e) => setNieuweSoort(e.target.value as PiiSoort)}>
                   {VOLGORDE.map((s) => (
                     <option key={s} value={s}>
-                      {SOORTNAAM[s]} ({artikel(catVan(s))})
+                      {SOORTNAAM[s]} ({PII_CATEGORIE[catVan(s)].omschrijving}, {artikel(catVan(s))})
                     </option>
                   ))}
                 </select>
@@ -461,7 +463,9 @@ export function Anonimiseren(p: AnonimiserenProps) {
                         <code>{r.plaatshouder}</code> <span className="oa-klein">{SOORTNAAM[r.soort] ?? r.soort}</span>
                       </div>
                       <div className="oa-klein">
-                        <span className={`oa-cat oa-cat-${r.categorie}`}>{artikel(r.categorie)}</span> {r.algoritme} · <span title="Sleutel per document per categorie">{r.sleutel}</span> · versie {r.versie}
+                        <span className={`oa-cat oa-cat-${r.categorie}`} title={PII_CATEGORIE[r.categorie].uitleg}>
+                          {artikel(r.categorie)} · {PII_CATEGORIE[r.categorie].omschrijving}
+                        </span> {r.algoritme} · <span title="Sleutel per document per categorie">{r.sleutel}</span> · versie {r.versie}
                       </div>
                       <div className="oa-registerwaarde">
                         {r.vernietigd ? (
