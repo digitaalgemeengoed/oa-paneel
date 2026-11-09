@@ -40,7 +40,7 @@ Dezelfde modules en volgorde als de demo (MIRA). Wat het prototype nog niet heef
 | Onderdelen | volgt |
 | Metadateren | Zakelijk of persoonlijk (verplicht); voor zakelijk de velden uit het objecttype met voorstellen; registreren of vastleggen. Persoonlijk: geen metadata, eigen opslag, alleen voor jou; later zakelijk maken kan altijd. |
 | Toegankelijkheid | Beoordelen, per bevinding de plek tonen en herstellen. |
-| Anonimiseren | Persoonsgegevens zoeken (OpenAnonymiser), een voorbeeld met de treffers, terugzetten en toevoegen, en na bevestiging de geanonimiseerde weergave vastleggen bij de versie. Het document zelf verandert niet. |
+| Anonimiseren | Persoonsgegevens zoeken (OpenAnonymiser), een voorbeeld met de treffers, terugzetten en toevoegen (ook uit een selectie in het document). Na bevestiging: versleuteld in het register, in het document vervangen door plaatshouders (`[PERSOON 1]`), nieuwe versie. Het register toont per gegeven de categorie en sleutel; "Toon origineel" volgens je PPL-niveau. |
 | Classificeren, Waarmerken, Workflow | volgt |
 | Help | Wat waar staat, en onder de motorkap: de vermogens van de werkomgeving, de laatste aanroepen en de gebeurtenissen van het stuk. |
 

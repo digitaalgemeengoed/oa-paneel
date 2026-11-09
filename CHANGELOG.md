@@ -1,5 +1,16 @@
 # Wijzigingen
 
+## 0.7.0 — 2026-11-09
+
+Module Anonimiseren werkt nu bij de bron, zoals de MIRA-demo:
+
+- Alle soorten, met hun AVG-artikel (6, 9 of 10). In Resultaat staan de plaatshouders zoals het register ze geeft (`[PERSOON 1]`).
+- "Selectie uit het document toevoegen": selecteer tekst in het document zelf en voeg die toe, ook als het voorbeeld die tekst niet toont (bijvoorbeeld een kop- of voettekst).
+- "Bevestigen: versleutelen en vervangen" registreert, vervangt in het document en legt een nieuwe versie vast.
+- Het register van het stuk: plaatshouder, soort, versleuteling en sleutel. "Toon origineel" als je niveau (PPL) hoog genoeg is; inzien komt in de geschiedenis.
+- Beheerders kunnen de sleutel van een categorie vernietigen.
+- Je eigen niveau staat bovenaan.
+
 ## 0.6.0 — 2026-11-09
 
 Module **Anonimiseren**: persoonsgegevens zoeken, een voorbeeld met de treffers gemarkeerd, per soort aan of uit (standaard: namen, adressen, BSN, IBAN, telefoon, e-mail, kenteken, zaaknummer), een treffer terugzetten met een klik, gemiste gegevens toevoegen door tekst te selecteren (desgewenst overal waar die tekst staat), schakelen tussen controleren en resultaat, en bevestigen: dan legt het platform de geanonimiseerde weergave vast bij de laatste versie. Het document zelf verandert niet. Overzicht laat zien of de versie is geanonimiseerd.

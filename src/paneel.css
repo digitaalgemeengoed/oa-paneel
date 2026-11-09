@@ -207,3 +207,25 @@
 .oa-pii-label { background: #1d1d1b; color: #fff; padding: 0 3px; border-radius: 2px; font-size: 0.8125rem; }
 .oa-anon-toon { margin-inline-start: 6px; font-size: 0.75rem; }
 .oa-anon-toevoegen select { font: inherit; }
+
+/* Anonimiseren bij de bron: categorie, register, sleutel vernietigen. */
+.oa-pii.oa-pii-c2 { background: #8a3b00; }
+.oa-pii.oa-pii-c3 { background: #a4001d; }
+.oa-pii-label.oa-pii-c2 { background: #8a3b00; }
+.oa-pii-label.oa-pii-c3 { background: #a4001d; }
+.oa-cat { display: inline-block; font-size: 0.6875rem; font-weight: 600; padding: 0 4px; border-radius: 2px; border: 1px solid currentColor; opacity: 0.85; white-space: nowrap; }
+.oa-cat-c2 { color: #8a3b00; }
+.oa-cat-c3 { color: #a4001d; }
+.oa-anon-los { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.oa-rij { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.oa-register { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--utrecht-form-control-border-color, #c4c4c4); padding-top: 10px; }
+.oa-register h3 { margin: 0; font-size: 1rem; }
+.oa-registerlijst { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.oa-registerlijst li { display: flex; flex-direction: column; gap: 2px; padding: 6px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.08); min-width: 0; overflow-wrap: anywhere; }
+.oa-registerwaarde { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.oa-register code { font-size: 0.8125rem; white-space: nowrap; }
+.oa-onthuld { background: #fff4cc; color: #1d1d1b; padding: 0 3px; border-radius: 2px; overflow-wrap: anywhere; }
+.oa-vernietig summary { cursor: pointer; font-size: 0.875rem; }
+.oa-vernietig[open] { display: flex; flex-direction: column; gap: 6px; }
+.oa-blok { display: flex; flex-direction: column; gap: 2px; }
+.oa-blok textarea { font: inherit; width: 100%; box-sizing: border-box; }

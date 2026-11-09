@@ -253,6 +253,8 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
     });
 
   const kanTonen = heeftVermogen(omgeving, "plek-tonen") && !!adapter.toonPlek;
+  const objectId = stand?.object?.identificatie ?? null;
+  const piiRegister = useCallback(async () => (objectId ? verbinding.piiRegister(objectId) : null), [verbinding, objectId]);
   const geregistreerd = !!stand?.object;
   const uit = onbereikbaar || !wie;
 
@@ -568,25 +570,38 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
         {actief === "anon" && (
           <Anonimiseren
             zoek={() => anonimiseren.vind(adapter, verbinding)}
-            bevestig={async (gevonden, gekozen) => {
-              const r = await anonimiseren.bevestig(verbinding, stand!, gevonden, gekozen);
+            bevestig={async (gekozen) => {
+              const r = await anonimiseren.bevestig(adapter, verbinding, stand!, gekozen);
               setStand(r.stand);
               setAfwijking("gelijk");
               await laadGeschiedenis(r.stand);
-              return r.overzicht;
+              return r;
             }}
             nietBevestigen={
               !geregistreerd
-                ? "Leg het stuk eerst vast (bij Metadateren): de geanonimiseerde weergave hoort bij een versie."
-                : afwijking === "afwijkend"
-                  ? `Het stuk is gewijzigd sinds versie ${stand!.object!.versies.at(-1)?.nummer}. Leg eerst een nieuwe versie vast (bij Overzicht).`
+                ? "Leg het stuk eerst vast (bij Metadateren): het register van persoonsgegevens hoort bij een geregistreerd stuk."
+                : !anonimiseren.kanBijDeBron(adapter)
+                  ? `${omgeving.naam} kan tekst in het document niet vervangen; anonimiseren bij de bron kan hier niet.`
                   : null
             }
-            alGeanonimiseerd={
-              (stand?.object?.versies.at(-1)?.weergaven ?? [])
-                .filter((w) => w.soort === "geanonimiseerd")
-                .reduce<number | null>((m, w) => Math.max(m ?? 0, w.volgnummer ?? 1), null)
+            register={piiRegister}
+            onthul={async (plaatshouders) => {
+              const { waarden } = await verbinding.onthulPii(stand!.object!.identificatie, plaatshouders);
+              await laadGeschiedenis(stand!);
+              return waarden;
+            }}
+            vernietig={
+              wie?.rollen.includes("beheerder")
+                ? async (categorie, reden) => {
+                    const r = await verbinding.vernietigPii(stand!.object!.identificatie, categorie, reden);
+                    await laadGeschiedenis(stand!);
+                    return r;
+                  }
+                : undefined
             }
+            leesSelectie={adapter.leesSelectie && heeftVermogen(omgeving, "selectie-lezen") ? () => adapter.leesSelectie!() : undefined}
+            niveau={wie?.niveau ?? 0}
+            versie={stand?.object?.versies.at(-1)?.nummer ?? null}
             toon={kanTonen ? (plek) => adapter.toonPlek!(plek) : undefined}
             bezig={bezig}
             setBezig={setBezig}
