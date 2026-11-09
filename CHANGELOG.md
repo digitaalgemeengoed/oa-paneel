@@ -1,5 +1,9 @@
 # Wijzigingen
 
+## 0.10.0 — 2026-11-09
+
+*Laat staan* vraagt waarom: **Geen persoonsgegeven**, **Mag openbaar** (bijvoorbeeld een functionaris) of **Verkeerde soort**, of *Zonder reden*. De reden telt mee in de kwaliteit in het beheerportaal (alleen tellingen).
+
 ## 0.9.0 — 2026-11-09
 
 Het paneel Metadateren volgt het metadatamodel van de gemeente (beheerportaal, pagina Metadatamodel): de velden, labels, hulpteksten, waardelijsten en volgorde. Datum- en getalvelden. Een stuk dat al is vastgelegd, toont de velden van het model waarmee het is vastgelegd.

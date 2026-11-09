@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Paragraph, PrimaryActionButton, SecondaryActionButton, StatusBadge, SubtleButton } from "@utrecht/component-library-react";
-import { PII_CATEGORIE, PII_SOORT, grondslagLabel, type Adapter, type PiiCategorie, type PiiSoort, type Ppl } from "@digitaalgemeengoed/oa-contract";
+import { LAAT_STAAN_REDENEN, PII_CATEGORIE, PII_SOORT, grondslagLabel, type Adapter, type LaatStaanReden, type PiiCategorie, type PiiSoort, type Ppl } from "@digitaalgemeengoed/oa-contract";
 import { anonimiseren, type PiiKaart, type Sessie, type Stand, type Verbinding } from "@digitaalgemeengoed/oa-kern";
 import { SOORTNAAM } from "./Anonimiseren";
 
@@ -38,6 +38,8 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
   const [sessie, setSessie] = useState<Sessie | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [gekozenPlek, setGekozenPlek] = useState<string | null>(null);
+  /** De kaart waarvoor de medewerker de reden van "Laat staan" kiest. */
+  const [redenVoor, setRedenVoor] = useState<string | null>(null);
   const [pick, setPick] = useState<{ tekst: string; soort: PiiSoort; categorie?: PiiCategorie } | null>(null);
   const [vernietigCat, setVernietigCat] = useState<PiiCategorie | "">("");
   const [originelen, setOriginelen] = useState<"laten" | "beperken">("beperken");
@@ -119,9 +121,10 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
       if (k) setOpen(k.sleutel);
     });
 
-  const laatStaan = (k: PiiKaart, plek?: string) =>
+  const laatStaan = (k: PiiKaart, plek?: string, reden?: LaatStaanReden) =>
     doe("anon-laat-staan", async () => {
-      setSessie(await anonimiseren.laatStaan(adapter, verbinding, stand, sessie!, k.sleutel, plek));
+      setRedenVoor(null);
+      setSessie(await anonimiseren.laatStaan(adapter, verbinding, stand, sessie!, k.sleutel, plek, reden));
       setGekozenPlek(null);
       if (k.status === "bevestigd") {
         meld({ soort: "warning", tekst: `${k.plaatshouder} is teruggezet in het document. Leg een nieuwe versie vast; die vraagt PPL ${k.ppl} om te lezen.` });
@@ -242,8 +245,8 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
               {k.plekken.length > 0 && adapter.toonPiiPlek && (
                 <SubtleButton onClick={() => adapter.toonPiiPlek!(gekozenPlek && k.plekken.includes(gekozenPlek) ? gekozenPlek : k.plekken[0]!)}>Toon in document</SubtleButton>
               )}
-              {k.status === "voorvertoning" && (
-                <SecondaryActionButton onClick={() => laatStaan(k)} disabled={uit || bezig !== null}>
+              {k.status === "voorvertoning" && redenVoor !== k.sleutel && (
+                <SecondaryActionButton onClick={() => setRedenVoor(k.sleutel)} disabled={uit || bezig !== null}>
                   Laat staan
                 </SecondaryActionButton>
               )}
@@ -251,6 +254,20 @@ export function AnonimiserenInDocument(p: AnonimiserenInDocumentProps) {
                 <SubtleButton onClick={() => laatStaan(k, gekozenPlek)} disabled={uit || bezig !== null}>
                   Alleen hier laten staan
                 </SubtleButton>
+              )}
+              {k.status === "voorvertoning" && redenVoor === k.sleutel && (
+                <div className="oa-reden" role="group" aria-label="Waarom laat je het staan?">
+                  <span className="oa-klein">Waarom laat je het staan? Dat helpt de herkenning te verbeteren; de waarde zelf wordt niet bewaard.</span>
+                  {(Object.keys(LAAT_STAAN_REDENEN) as LaatStaanReden[]).map((r) => (
+                    <SecondaryActionButton key={r} onClick={() => laatStaan(k, undefined, r)} disabled={uit || bezig !== null}>
+                      {LAAT_STAAN_REDENEN[r]}
+                    </SecondaryActionButton>
+                  ))}
+                  <SubtleButton onClick={() => laatStaan(k)} disabled={uit || bezig !== null}>
+                    Zonder reden
+                  </SubtleButton>
+                  <SubtleButton onClick={() => setRedenVoor(null)}>Annuleer</SubtleButton>
+                </div>
               )}
               {k.status === "bevestigd" && mag && (
                 <SecondaryActionButton onClick={() => laatStaan(k)} disabled={uit || bezig !== null}>
