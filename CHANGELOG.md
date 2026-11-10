@@ -1,5 +1,13 @@
 # Wijzigingen
 
+## 0.12.0 — 2026-11-10
+
+- **Classificeren** is er: voorstellen van de assistent, zoeken in de selectielijst, eigen attributen, de einddatum van het procesobject als de termijn daarop ingaat, en vooraf wat de keuze betekent voor het bewaren. Klein bovenaan: naam en versie van het classificatiemodel.
+- **Overzicht**: klasse, *Bewaren tot …* en of het stuk vergrendeld is.
+- **Vergrendeld**: geen knop *Versie vastleggen* meer, wel *Wijzigingsvoorstel indienen* (met reden), en de voorstellen bij het stuk. De metadata staat dicht, behalve voor een vrijgever.
+- **Vrijgever**: onder Overzicht *Te beoordelen*: alle open voorstellen van de gemeente, met wat er verandert (per alinea, weg en erbij), goedkeuren of afwijzen met een toelichting.
+- **Laden**: zolang de server en het document nog niet klaar zijn, een laadscherm met voortgangsbalk (stap 2 van 2, met hoeveel vragen al beantwoord zijn) in plaats van een half overzicht.
+
 ## 0.11.0 — 2026-11-10
 
 - Bovenaan Metadateren staan, klein, de naam en de versie van het metadatamodel van dit stuk. Is het stuk vastgelegd met een ouder model, dan staat erbij welke versie nu geldt.

@@ -18,7 +18,7 @@ import {
   Textarea,
   Textbox,
 } from "@utrecht/component-library-react";
-import { heeftVermogen, modelVan, rolWaarden, type Aard, type Adapter, type Bevinding, type Gebeurtenis, type Objecttype, type Versie, type WieBenIk } from "@digitaalgemeengoed/oa-contract";
+import { classificatiemodelnaam, heeftVermogen, modelVan, rolWaarden, type Aard, type Adapter, type Bevinding, type Gebeurtenis, type Objecttype, type Versie, type WieBenIk } from "@digitaalgemeengoed/oa-contract";
 import {
   metadateren,
   toegankelijkheid,
@@ -31,9 +31,12 @@ import {
   vergelijkMetLaatsteVersie,
   Verbinding,
   VerbindingsFout,
+  type ClassificatieAntwoord,
   type Stand,
   type Veld,
 } from "@digitaalgemeengoed/oa-kern";
+import { Classificeren } from "./Classificeren";
+import { TeBeoordelen, Vergrendeld } from "./Vrijgave";
 import { Motorkap, type Aanroep } from "./Motorkap";
 import { Anonimiseren } from "./Anonimiseren";
 import { AnonimiserenInDocument } from "./AnonimiserenInDocument";
@@ -125,6 +128,10 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
   const [aardKeuze, setAardKeuze] = useState<Aard | null>(null);
   /** Wijkt het stuk af van de laatste vastgelegde versie (gewijzigd, of een kopie)? */
   const [afwijking, setAfwijking] = useState<"gelijk" | "afwijkend" | "onbekend">("onbekend");
+  /** Het classificatiemodel: eerst alleen het model, met de selectielijst zodra Classificeren opent. */
+  const [klassen, setKlassen] = useState<ClassificatieAntwoord | null>(null);
+  /** Opstarten: hoeveel van de vragen aan de server al beantwoord zijn (voor de voortgangsbalk). */
+  const [geladen, setGeladen] = useState(0);
 
   const fout = useCallback((e: unknown) => {
     if (e instanceof VerbindingsFout) {
@@ -162,7 +169,17 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
     let weg = false;
     (async () => {
       try {
-        const [w, actief, s, inhoud] = await Promise.all([verbinding.wieBenIk(), verbinding.objecttype(OBJECTTYPE), bepaalStand(adapter, verbinding), adapter.leverInhoud()]);
+        const tel = <T,>(p: Promise<T>) => p.then((x) => (weg || setGeladen((n) => n + 1), x));
+        const [w, actief, s, inhoud] = await Promise.all([
+          tel(verbinding.wieBenIk()),
+          tel(verbinding.objecttype(OBJECTTYPE)),
+          tel(bepaalStand(adapter, verbinding)),
+          tel(adapter.leverInhoud()),
+        ]);
+        verbinding.classificatie(true).then(
+          (k) => weg || setKlassen((oud) => oud?.selectielijst ? oud : k),
+          () => weg || setKlassen({ model: null }),
+        );
         // Een vastgelegd stuk houdt het metadatamodel waarmee het is vastgelegd.
         const eigen = s.object?.objecttype;
         const t = eigen && (eigen.naam !== actief.naam || eigen.versie !== actief.versie) ? await verbinding.objecttype(eigen.naam, eigen.versie) : actief;
@@ -187,6 +204,18 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
     };
   }, [adapter, verbinding, fout, laadGeschiedenis]);
 
+  useEffect(() => {
+    if (actief !== "clas" || klassen?.selectielijst || !wie) return;
+    let weg = false;
+    verbinding.classificatie().then(
+      (k) => weg || setKlassen(k),
+      (e) => weg || fout(e),
+    );
+    return () => {
+      weg = true;
+    };
+  }, [actief, klassen, wie, verbinding, fout]);
+
   const velden: Veld[] = useMemo(() => (type ? metadateren.velden(type) : []), [type]);
   const aard: Aard | null = stand?.object ? (stand.object.aard ?? "zakelijk") : aardKeuze;
   const persoonlijk = aard === "persoonlijk";
@@ -194,6 +223,11 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
   const model = type ? modelVan(type) : null;
   const ouderModel = !!(type && actueel && stand?.object && type.versie !== actueel.versie);
   const status = type && stand?.object ? rolWaarden(type.schema, stand.object.metadata as Record<string, unknown>).status : undefined;
+  const vrijgever = !!wie?.rollen.includes("vrijgever");
+  const vergrendeld = stand?.object?.vergrendeld ?? null;
+  const metadataDicht = !!vergrendeld && !vrijgever;
+  const klasModel = klassen?.model ?? null;
+  const klasVersie = stand?.object?.classificatie?.modelversie ?? klasModel?.versie;
 
   async function voerUit(naam: string, werk: () => Promise<void>) {
     setBezig(naam);
@@ -255,7 +289,11 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
   const doeVersie = () =>
     voerUit("versie", async () => {
       const voor = stand!.object!.versies.length;
-      const s = await legVersieVast(adapter, verbinding, stand!, type ?? undefined);
+      const s = await legVersieVast(adapter, verbinding, stand!, type ?? undefined).catch(async (e) => {
+        // Intussen vergrendeld (een ander zette de status): de stand bijwerken, dan zie je het voorstelvak.
+        if (e instanceof VerbindingsFout && e.code === "vergrendeld") setStand({ ...stand!, object: await verbinding.object(stand!.object!.identificatie) });
+        throw e;
+      });
       setStand(s);
       setAfwijking("gelijk");
       setMelding(
@@ -288,6 +326,8 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
   const piiRegister = useCallback(async () => (objectId ? verbinding.piiRegister(objectId) : null), [verbinding, objectId]);
   const geregistreerd = !!stand?.object;
   const uit = onbereikbaar || !wie;
+  // Opstarten: nog niets van de server. Dan alleen het laadscherm, geen half overzicht.
+  const laden = !wie && !onbereikbaar && !melding;
 
   // Knoppen in de werkbalk van de werkomgeving sturen een opdracht (zie modules.tsx).
   const [beoordeelVerzoek, setBeoordeelVerzoek] = useState(module === "beoordelen" ? 1 : 0);
@@ -323,8 +363,10 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
   const openBevindingen = bevindingen?.length ?? 0;
   const aandacht: { module: ModuleId; tekst: string }[] = [];
   if (stand && !geregistreerd) aandacht.push({ module: "meta", tekst: aard ? "Nog niet vastgelegd" : "Kies zakelijk of persoonlijk" });
-  if (afwijking === "afwijkend") aandacht.push({ module: "ovz", tekst: `Gewijzigd sinds versie ${stand?.object?.versies.at(-1)?.nummer}, of een kopie` });
+  if (afwijking === "afwijkend") aandacht.push({ module: "ovz", tekst: vergrendeld ? `Gewijzigd sinds versie ${stand?.object?.versies.at(-1)?.nummer}: dien een wijzigingsvoorstel in` : `Gewijzigd sinds versie ${stand?.object?.versies.at(-1)?.nummer}, of een kopie` });
   if (type && ontbreekt.length) aandacht.push({ module: "meta", tekst: `${ontbreekt.length} verplicht metadataveld${ontbreekt.length > 1 ? "en" : ""} open` });
+  if (stand?.object && !persoonlijk && klasModel && !stand.object.classificatie) aandacht.push({ module: "clas", tekst: "Nog niet geclassificeerd" });
+  if (vergrendeld && (stand?.object?.voorstellen ?? 0) > 0) aandacht.push({ module: "ovz", tekst: `${stand!.object!.voorstellen} wijzigingsvoorstel${stand!.object!.voorstellen! > 1 ? "len" : ""} wacht op beoordeling` });
   if (bevindingen === null) aandacht.push({ module: "toeg", tekst: "Toegankelijkheid nog niet beoordeeld" });
   else if (openBevindingen) aandacht.push({ module: "toeg", tekst: `${openBevindingen} bevinding${openBevindingen > 1 ? "en" : ""} over toegankelijkheid` });
   const teller: Partial<Record<ModuleId, number | string>> = {
@@ -387,10 +429,28 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
                 {ouderModel && <> · nu geldt versie {actueel!.versie}</>}
               </p>
             )}
+            {actief === "clas" && klasModel && !persoonlijk && (
+              <p className="oa-model" title="Het classificatiemodel van de gemeente, ingesteld in het beheerportaal.">
+                {classificatiemodelnaam(klasModel.config)} · versie {klasVersie}
+                {klasVersie !== klasModel.versie && <> · nu geldt versie {klasModel.versie}</>}
+              </p>
+            )}
           </div>
           <span className={`oa-verbonden${uit ? " oa-niet" : ""}`} title={uit ? "Niet verbonden met het platform" : "Verbonden met het platform"} aria-label={uit ? "Niet verbonden met het platform" : "Verbonden met het platform"} />
         </header>
 
+        {laden && (
+          <div className="oa-laden" role="status" aria-live="polite">
+            <div className="oa-laden-cirkel" aria-hidden="true" />
+            <p className="oa-laden-tekst">De Assistent wordt geladen…</p>
+            <div className="oa-laden-balk" role="progressbar" aria-label="Voortgang" aria-valuemin={0} aria-valuemax={100} aria-valuenow={50 + geladen * 12}>
+              <span style={{ width: `${50 + geladen * 12}%` }} />
+            </div>
+            <p className="oa-laden-stap">Stap 2 van 2: verbinden met de server en het document lezen ({geladen} van 4).</p>
+          </div>
+        )}
+
+        {!laden && (<>
         {melding && (
           <Alert type={melding.soort} role={melding.soort === "error" ? "alert" : "status"}>
             <Paragraph>{melding.tekst}</Paragraph>
@@ -440,6 +500,40 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
                         <DataListValue>
                           {model.naam}, versie {model.versie}
                           {ouderModel && <span className="oa-klein"> (nu geldt versie {actueel!.versie})</span>}
+                        </DataListValue>
+                      </DataListItem>
+                    )}
+                    {!persoonlijk && stand!.object!.classificatie && (
+                      <DataListItem>
+                        <DataListKey>Klasse</DataListKey>
+                        <DataListValue>
+                          <button type="button" className="oa-link" onClick={() => setActief("clas")}>
+                            {stand!.object!.classificatie.resultaat}
+                          </button>{" "}
+                          <span className="oa-klein">{stand!.object!.bewaren?.klasse ?? "(selectielijst)"}</span>
+                        </DataListValue>
+                      </DataListItem>
+                    )}
+                    {!persoonlijk && stand!.object!.bewaren && (
+                      <DataListItem>
+                        <DataListKey>Bewaren</DataListKey>
+                        <DataListValue>
+                          {stand!.object!.bewaren.archiefactiedatum ? (
+                            <>
+                              <b>tot {new Date(stand!.object!.bewaren.archiefactiedatum).toLocaleDateString("nl-NL")}</b>, daarna vernietigen
+                              <span className="oa-klein"> · {stand!.object!.bewaren.uitleg.replace(/^Vernietigen na [^:]+: /, "")}</span>
+                            </>
+                          ) : (
+                            stand!.object!.bewaren.uitleg
+                          )}
+                        </DataListValue>
+                      </DataListItem>
+                    )}
+                    {vergrendeld && (
+                      <DataListItem>
+                        <DataListKey>Vergrendeld</DataListKey>
+                        <DataListValue>
+                          <StatusBadge status="warning">ja, {vergrendeld.status}</StatusBadge>
                         </DataListValue>
                       </DataListItem>
                     )}
@@ -503,7 +597,7 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
                       />
                     </details>
                   )}
-                  {afwijking === "afwijkend" && (
+                  {afwijking === "afwijkend" && !vergrendeld && (
                     <div className="oa-kader" role="note">
                       <Paragraph small>
                         Dit stuk wijkt af van versie {stand!.object!.versies.at(-1)?.nummer} in het platform. Heb je het daarna gewijzigd, leg dan een nieuwe versie vast. Is het een
@@ -515,9 +609,28 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
                   {stand!.object!.onleesbaarGemaakt && (
                     <Paragraph small>De sleutel van dit stuk is vernietigd. De registratie blijft bestaan; nieuwe versies kunnen niet meer worden vastgelegd.</Paragraph>
                   )}
-                  <SecondaryActionButton onClick={doeVersie} disabled={uit || bezig !== null || !!stand!.object!.onleesbaarGemaakt} busy={bezig === "versie"}>
-                    Versie vastleggen
-                  </SecondaryActionButton>
+                  {!vergrendeld && (
+                    <SecondaryActionButton onClick={doeVersie} disabled={uit || bezig !== null || !!stand!.object!.onleesbaarGemaakt} busy={bezig === "versie"}>
+                      Versie vastleggen
+                    </SecondaryActionButton>
+                  )}
+                  {wie && (
+                    <Vergrendeld
+                      adapter={adapter}
+                      verbinding={verbinding}
+                      stand={stand!}
+                      setStand={setStand}
+                      wie={wie}
+                      afwijkend={afwijking === "afwijkend"}
+                      uit={uit}
+                      melding={(m) => setMelding(m)}
+                      fout={fout}
+                      naWijziging={async (s) => {
+                        setAfwijking(await vergelijkMetLaatsteVersie(s, await adapter.leverInhoud()));
+                        await laadGeschiedenis(s);
+                      }}
+                    />
+                  )}
                 </>
               ) : (
                 <Paragraph>
@@ -542,6 +655,18 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
                 <Paragraph small>Niets open.</Paragraph>
               )}
             </section>
+            {vrijgever && wie && (
+              <TeBeoordelen
+                verbinding={verbinding}
+                wie={wie}
+                huidig={stand?.object?.identificatie}
+                melding={(m) => setMelding(m)}
+                fout={fout}
+                naBesluit={async (id) => {
+                  if (stand?.object?.identificatie === id) setStand({ ...stand, object: await verbinding.object(id) });
+                }}
+              />
+            )}
           </>
         )}
 
@@ -573,6 +698,12 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
                 {geregistreerd && !persoonlijk && "Zakelijk. Persoonlijk maken kan in het prototype nog niet; straks binnen de bedenktijd, of op verzoek bij de informatiebeheerder."}
               </div>
             </div>
+            {metadataDicht && (
+              <Alert type="info">
+                <Paragraph>Dit stuk is {vergrendeld!.status} en vergrendeld. De metadata wijzigt alleen een vrijgever; die geeft het stuk zo ook vrij.</Paragraph>
+              </Alert>
+            )}
+            <fieldset className="oa-velden" disabled={metadataDicht}>
             {!persoonlijk && velden.map((v) => (
               <FormField
                 key={v.naam}
@@ -593,9 +724,10 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
                 input={veldInvoer(v, metadata[v.naam] ?? "", (w) => setMetadata((m) => ({ ...m, [v.naam]: w })), !!fouten[v.naam])}
               />
             ))}
+            </fieldset>
             {geregistreerd ? (
               !persoonlijk && (
-                <PrimaryActionButton onClick={doeMetadata} disabled={uit || bezig !== null} busy={bezig === "metadata"}>
+                <PrimaryActionButton onClick={doeMetadata} disabled={uit || bezig !== null || metadataDicht} busy={bezig === "metadata"}>
                   Metadata vastleggen
                 </PrimaryActionButton>
               )
@@ -732,6 +864,33 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
           </section>
         )}
 
+        {actief === "clas" && wie && (
+          stand?.object && !persoonlijk ? (
+            <Classificeren
+              key={stand.object.identificatie}
+              adapter={adapter}
+              verbinding={verbinding}
+              stand={stand}
+              setStand={(s) => {
+                setStand(s);
+                laadGeschiedenis(s).catch(() => undefined);
+              }}
+              type={type}
+              wie={wie}
+              klassen={klassen?.selectielijst ? klassen : null}
+              uit={uit}
+              melding={(m) => setMelding(m)}
+              fout={fout}
+            />
+          ) : (
+            <section className="oa-sectie" aria-label="Classificeren">
+              <Paragraph>
+                {persoonlijk ? "Een persoonlijk stuk wordt niet geclassificeerd: het valt buiten het archief." : "Leg het stuk eerst vast (bij Metadateren). Daarna kies je hier de klasse uit de selectielijst."}
+              </Paragraph>
+            </section>
+          )
+        )}
+
         {actief === "help" && (
           <>
             <section className="oa-sectie" aria-label="Modules">
@@ -753,6 +912,7 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
             <Motorkap aanroepen={aanroepen} geschiedenis={geschiedenis} omgeving={omgeving} />
           </>
         )}
+        </>)}
       </div>
       {knoppen === "rechts" && rij}
     </div>

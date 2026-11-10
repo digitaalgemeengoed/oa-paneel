@@ -269,3 +269,45 @@
 }
 
 .oa-reden { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 100%; }
+
+/* Laden: tot de server en het document er zijn (stap 2; stap 1 staat als vaste html in de pagina). */
+.oa-laden { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 32px 8px; text-align: center; }
+.oa-laden-cirkel { width: 36px; height: 36px; border-radius: 50%; border: 3px solid rgba(26, 94, 168, 0.2); border-top-color: var(--utrecht-button-primary-action-background-color, #1a5ea8); animation: oa-draai 0.9s linear infinite; }
+.oa-laden-tekst { margin: 0; font-weight: 600; }
+.oa-laden-balk { width: min(240px, 80%); height: 6px; border-radius: 3px; background: rgba(26, 94, 168, 0.15); overflow: hidden; }
+.oa-laden-balk span { display: block; height: 100%; background: var(--utrecht-button-primary-action-background-color, #1a5ea8); transition: width 0.3s ease; }
+.oa-laden-stap { margin: 0; font-size: 0.8125rem; color: #555; max-width: 30em; }
+@keyframes oa-draai { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .oa-laden-cirkel { animation-duration: 3s; } .oa-laden-balk span { transition: none; } }
+
+/* Classificeren */
+.oa-velden { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.oa-klassen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.oa-klasse button { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: start; font: inherit; color: inherit; background: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 6px 8px; cursor: pointer; }
+.oa-klasse button:hover:not(:disabled) { border-color: var(--utrecht-button-primary-action-background-color, #1a5ea8); }
+.oa-klasse button:focus-visible { outline: 2px solid var(--utrecht-focus-outline-color, #1a5ea8); outline-offset: 2px; }
+.oa-klasse.gekozen button { border-color: var(--utrecht-button-primary-action-background-color, #1a5ea8); box-shadow: inset 3px 0 0 var(--utrecht-button-primary-action-background-color, #1a5ea8); }
+.oa-klasse-kop { font-size: 0.875rem; }
+.oa-waarom { font-style: italic; }
+.oa-gekozen { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #ddd; padding-top: 8px; }
+.oa-gekozen .utrecht-paragraph { margin: 0; }
+.oa-bewaren { background: rgba(26, 94, 168, 0.06); border-inline-start: 4px solid var(--utrecht-button-primary-action-background-color, #1a5ea8); padding: 6px 8px; }
+.oa-kader-rustig { border-inline-start-color: #888; background: rgba(0, 0, 0, 0.04); }
+
+/* Vergrendeld en voorstellen */
+.oa-slot { border-inline-start-color: #8a6100; }
+.oa-slot .utrecht-textarea { width: 100%; }
+.oa-voorstellen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.oa-voorstel-regel { border: 1px solid #ddd; border-radius: 4px; padding: 6px 8px; }
+.oa-voorstel-regel .utrecht-paragraph { margin: 0 0 4px; }
+.oa-beoordelen { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.oa-beoordelen .utrecht-textarea { width: 100%; }
+.oa-verschil { list-style: none; margin: 0; padding: 0; font-size: 0.8125rem; border: 1px solid #ddd; border-radius: 4px; max-height: 260px; overflow: auto; }
+.oa-verschil li { display: flex; gap: 6px; padding: 2px 6px; overflow-wrap: anywhere; }
+.oa-v-teken { flex: none; width: 1em; font-weight: 700; }
+.oa-v-weg { background: #fde8e8; text-decoration: line-through; text-decoration-color: rgba(150, 0, 0, 0.4); }
+.oa-v-erbij { background: #e3f4e6; }
+.oa-v-gelijk { color: #555; }
+.oa-v-gat { border-top: 1px dashed #ccc; }
+.oa-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.oa-details summary { cursor: pointer; font-size: 0.875rem; }

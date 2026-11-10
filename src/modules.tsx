@@ -29,8 +29,7 @@ export const MODULES: ModuleInfo[] = [
   {
     id: "clas",
     naam: "Classificeren",
-    onder: "Openbaarheid en bewaring",
-    volgt: "Openbaarheid (Woo-categorie, beperkingen op gebruik) en bewaring (categorie uit de selectielijst, bewaartermijn), met de bron van elke waarde: gekozen, afgeleid van de zaak of het dossier, of gezet door een regel.",
+    onder: "Selectielijst, bewaartermijn en eigen kenmerken",
   },
   {
     id: "waar",
