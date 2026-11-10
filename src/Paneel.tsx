@@ -18,7 +18,7 @@ import {
   Textarea,
   Textbox,
 } from "@utrecht/component-library-react";
-import { heeftVermogen, type Aard, type Adapter, type Bevinding, type Gebeurtenis, type Objecttype, type Versie, type WieBenIk } from "@digitaalgemeengoed/oa-contract";
+import { heeftVermogen, modelVan, rolWaarden, type Aard, type Adapter, type Bevinding, type Gebeurtenis, type Objecttype, type Versie, type WieBenIk } from "@digitaalgemeengoed/oa-contract";
 import {
   metadateren,
   toegankelijkheid,
@@ -108,7 +108,9 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
 
   const omgeving = adapter.werkomgeving();
   const [wie, setWie] = useState<WieBenIk | null>(null);
+  // Het metadatamodel van dit stuk, en het model dat nu voor nieuwe stukken geldt.
   const [type, setType] = useState<Objecttype | null>(null);
+  const [actueel, setActueel] = useState<Objecttype | null>(null);
   const [stand, setStand] = useState<Stand | null>(null);
   const [metadata, setMetadata] = useState<Record<string, string>>({});
   const [voorstellen, setVoorstellen] = useState<Record<string, string>>({});
@@ -168,6 +170,7 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
         setOnbereikbaar(false);
         setWie(w);
         setType(t);
+        setActueel(actief);
         setStand(s);
         const huidig = (s.object?.metadata ?? {}) as Record<string, string>;
         setMetadata(huidig);
@@ -188,6 +191,9 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
   const aard: Aard | null = stand?.object ? (stand.object.aard ?? "zakelijk") : aardKeuze;
   const persoonlijk = aard === "persoonlijk";
   const ontbreekt = type && !persoonlijk ? metadateren.bevindingen(type, metadata) : [];
+  const model = type ? modelVan(type) : null;
+  const ouderModel = !!(type && actueel && stand?.object && type.versie !== actueel.versie);
+  const status = type && stand?.object ? rolWaarden(type.schema, stand.object.metadata as Record<string, unknown>).status : undefined;
 
   async function voerUit(naam: string, werk: () => Promise<void>) {
     setBezig(naam);
@@ -240,7 +246,7 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
   const doeMetadata = () =>
     voerUit("metadata", async () => {
       setFouten({});
-      const s = await legMetadataVast(verbinding, stand!, metadata, type ?? undefined);
+      const s = await legMetadataVast(verbinding, stand!, metadata, type ?? undefined, adapter);
       setStand(s);
       setMelding({ soort: "ok", tekst: "De metadata is vastgelegd." });
       await laadGeschiedenis(s);
@@ -249,7 +255,7 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
   const doeVersie = () =>
     voerUit("versie", async () => {
       const voor = stand!.object!.versies.length;
-      const s = await legVersieVast(adapter, verbinding, stand!);
+      const s = await legVersieVast(adapter, verbinding, stand!, type ?? undefined);
       setStand(s);
       setAfwijking("gelijk");
       setMelding(
@@ -375,6 +381,12 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
           <div>
             <Heading2>{info.naam}</Heading2>
             <Paragraph small>{info.onder}</Paragraph>
+            {actief === "meta" && model && !persoonlijk && (
+              <p className="oa-model" title={ouderModel ? `Dit stuk is vastgelegd met versie ${model.versie}. Voor nieuwe stukken geldt nu versie ${actueel!.versie}.` : "Het metadatamodel van de gemeente, ingesteld in het beheerportaal."}>
+                {model.naam} · versie {model.versie}
+                {ouderModel && <> · nu geldt versie {actueel!.versie}</>}
+              </p>
+            )}
           </div>
           <span className={`oa-verbonden${uit ? " oa-niet" : ""}`} title={uit ? "Niet verbonden met het platform" : "Verbonden met het platform"} aria-label={uit ? "Niet verbonden met het platform" : "Verbonden met het platform"} />
         </header>
@@ -409,13 +421,28 @@ export function Paneel({ adapter, basis = "", sessie, knoppen = "rechts", module
                     <DataListItem>
                       <DataListKey>Identificatie</DataListKey>
                       <DataListValue>
-                        <code title={stand!.object!.identificatie}>{stand!.object!.identificatie.slice(0, 8)}…</code>
+                        <code className="oa-id">{stand!.object!.identificatie}</code>
                       </DataListValue>
                     </DataListItem>
                     <DataListItem>
                       <DataListKey>Versie</DataListKey>
                       <DataListValue>{stand!.object!.versies.at(-1)?.nummer ?? "geen"}</DataListValue>
                     </DataListItem>
+                    {status && (
+                      <DataListItem>
+                        <DataListKey>Status</DataListKey>
+                        <DataListValue>{status}</DataListValue>
+                      </DataListItem>
+                    )}
+                    {!persoonlijk && model && (
+                      <DataListItem>
+                        <DataListKey>Metadatamodel</DataListKey>
+                        <DataListValue>
+                          {model.naam}, versie {model.versie}
+                          {ouderModel && <span className="oa-klein"> (nu geldt versie {actueel!.versie})</span>}
+                        </DataListValue>
+                      </DataListItem>
+                    )}
                     {stand!.object!.versies.at(-1)?.weergaven?.some((w) => w.soort === "geanonimiseerd") && (
                       <DataListItem>
                         <DataListKey>Geanonimiseerd</DataListKey>

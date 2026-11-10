@@ -1,5 +1,10 @@
 # Wijzigingen
 
+## 0.11.0 — 2026-11-10
+
+- Bovenaan Metadateren staan, klein, de naam en de versie van het metadatamodel van dit stuk. Is het stuk vastgelegd met een ouder model, dan staat erbij welke versie nu geldt.
+- Overzicht: de volledige identificatie, de status (als het model die heeft) en het metadatamodel met versie.
+
 ## 0.10.0 — 2026-11-09
 
 *Laat staan* vraagt waarom: **Geen persoonsgegeven**, **Mag openbaar** (bijvoorbeeld een functionaris) of **Verkeerde soort**, of *Zonder reden*. De reden telt mee in de kwaliteit in het beheerportaal (alleen tellingen).
